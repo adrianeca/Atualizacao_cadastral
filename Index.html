@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="icon" type="image/png" href="https://drive.google.com/uc?export=view&id=1fqZbnxHJNyov_9NwhwDAg235FizcnTGQ">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atualização Cadastral 2026 — BRASAS</title>
+  <style>
+    :root {
+      --royal-blue: #4169e1;
+      --royal-blue-dark: #2f55cc;
+      --royal-blue-light: #eaf0ff;
+      --royal-blue-lighter: #f5f8ff;
+      --royal-blue-border: #9db4ff;
+      --text-main: #1f2a44;
+      --text-soft: #5f6f94;
+      --bg-page: #f3f6fd;
+      --success: #1f7a4d;
+      --success-bg: #eaf7f0;
+      --warning: #9a6700;
+      --warning-bg: #fff6df;
+      --danger: #b42318;
+      --danger-bg: #fdecec;
+      --shadow: 0 8px 24px rgba(65,105,225,0.10);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-main);
+      padding: 14px;
+    }
+
+    .app-shell { max-width: 800px; margin: 0 auto; }
+    .app-shell.wide { max-width: 100%; }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, var(--royal-blue), var(--royal-blue-dark));
+      color: white;
+      border-radius: 24px 24px 0 0;
+      padding: 32px 28px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .hero-text h1 { font-size: 26px; font-weight: 300; letter-spacing: 0.2px; }
+    .hero-text p  { font-size: 14px; opacity: 0.88; margin-top: 6px; }
+    .hero-actions { display: flex; gap: 10px; align-items: center; }
+
+    /* ── Content ── */
+    .content { background: #eef3ff; padding: 24px 0 16px; border-radius: 0 0 24px 24px; }
+
+    /* ── Section card ── */
+    .section-card {
+      background: rgba(255,255,255,0.94);
+      border: 2px solid var(--royal-blue);
+      border-radius: var(--radius-lg);
+      margin: 0 auto 24px;
+      width: calc(100% - 48px);
+      padding: 26px 28px;
+      box-shadow: 0 4px 18px rgba(65,105,225,0.08);
+    }
+    .section-card.full { max-width: none; }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      color: var(--royal-blue-dark);
+      font-size: 17px;
+      font-weight: bold;
+    }
+    .section-title .icon { font-size: 20px; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+    .field  { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--text-main);
+    }
+    .required { color: #d92d20; }
+
+    input[type="text"],
+    input[type="email"],
+    select {
+      width: 100%;
+      border: 2px solid #d6def7;
+      border-radius: 10px;
+      padding: 11px 13px;
+      font-size: 14px;
+      color: var(--text-main);
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: var(--royal-blue);
+      box-shadow: 0 0 0 3px rgba(65,105,225,0.12);
+    }
+    input[readonly] { background: #f0f4ff; color: var(--text-soft); cursor: default; }
+    .help { font-size: 12px; color: var(--text-soft); margin-top: 5px; line-height: 1.4; }
+
+    /* ── CPF input ── */
+    .cpf-wrap { max-width: 360px; margin: 0 auto; }
+    .cpf-big {
+      font-size: 24px !important;
+      text-align: center;
+      letter-spacing: 3px;
+      padding: 16px 18px !important;
+    }
+
+    /* ── Radio buttons ── */
+    .radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 10px 16px;
+      border: 2px solid #d6def7;
+      border-radius: 10px;
+      background: white;
+      transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+    .radio-item:hover { border-color: var(--royal-blue); background: var(--royal-blue-light); }
+    .radio-item.selected { border-color: var(--royal-blue); background: var(--royal-blue-light); font-weight: bold; color: var(--royal-blue-dark); }
+    .radio-item input[type="radio"] { width: 16px; height: 16px; accent-color: var(--royal-blue); cursor: pointer; }
+
+    /* ── Toggle Sim/Não ── */
+    .toggle-group { display: flex; gap: 12px; max-width: 240px; }
+    .toggle-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #d6def7;
+      border-radius: 10px;
+      background: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      color: var(--text-soft);
+    }
+    .toggle-btn:hover { border-color: var(--royal-blue); }
+    .toggle-btn.selected { border-color: var(--royal-blue); background: var(--royal-blue-light); color: var(--royal-blue-dark); }
+
+    /* ── Info / Warning boxes ── */
+    .info-box {
+      background: var(--royal-blue-light);
+      border: 1.5px solid var(--royal-blue-border);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--royal-blue-dark);
+      margin-bottom: 22px;
+    }
+    .warning-box {
+      background: var(--warning-bg);
+      border: 1.5px solid #f0c060;
+      border-radius: var(--radius-md);
+      padding: 13px 18px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--warning);
+      margin-top: 14px;
+    }
+    .declaration-box {
+      background: #f8f9ff;
+      border: 1.5px solid #c8d4ff;
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      font-size: 13px;
+      line-height: 1.9;
+      color: var(--text-main);
+      margin-bottom: 20px;
+    }
+
+    /* ── Buttons ── */
+    .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--royal-blue), var(--royal-blue-dark));
+      color: white;
+      padding: 12px 22px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(65,105,225,0.22);
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    button:hover    { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(65,105,225,0.28); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary  { background: white; color: var(--royal-blue-dark); border: 2px solid var(--royal-blue-border); box-shadow: none; }
+    .btn-secondary:hover { background: var(--royal-blue-lighter); box-shadow: none; }
+    .btn-ghost {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      box-shadow: none;
+      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 10px;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.25); transform: none; box-shadow: none; }
+    .btn-success { background: linear-gradient(135deg, #38a169, #276749); box-shadow: 0 4px 12px rgba(39,103,73,0.2); }
+    .btn-danger  { background: linear-gradient(135deg, #e53e3e, #c53030); box-shadow: 0 4px 12px rgba(197,48,48,0.2); }
+    .btn-sm      { padding: 7px 13px; font-size: 12px; border-radius: 9px; }
+    .btn-lg      { padding: 16px 36px; font-size: 16px; }
+
+    /* ── Success card ── */
+    .success-card { text-align: center; padding: 48px 28px; }
+    .success-icon { font-size: 72px; margin-bottom: 20px; }
+    .success-card h2 { font-size: 24px; color: var(--success); margin-bottom: 14px; }
+    .success-card p  { font-size: 15px; color: var(--text-soft); line-height: 1.7; max-width: 500px; margin: 0 auto; }
+
+    /* ── Admin: Dashboard cards ── */
+    .dash-mini {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .dash-mini-card {
+      background: white;
+      border: 2px solid #dde7ff;
+      border-radius: var(--radius-md);
+      padding: 18px 14px;
+      text-align: center;
+    }
+    .dash-mini-card .num { font-size: 36px; font-weight: bold; color: var(--royal-blue-dark); }
+    .dash-mini-card .lbl { font-size: 11px; color: var(--text-soft); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .dash-mini-card.c-dep .num { color: var(--warning); }
+    .dash-mini-card.c-novo .num { color: var(--success); }
+
+    /* ── Admin: Filtros ── */
+    .filtros-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+    .filtros-row input[type="text"] { max-width: 280px; }
+    .filtros-row select             { max-width: 200px; }
+
+    /* ── Admin: Tabela ── */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius-md); }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    thead th {
+      background: var(--royal-blue);
+      color: white;
+      padding: 10px 10px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #e8eef8; transition: background 0.15s; }
+    tbody tr:hover { background: #f0f5ff; }
+    tbody td { padding: 9px 10px; vertical-align: middle; white-space: nowrap; }
+    .table-info { font-size: 12px; color: var(--text-soft); margin-top: 10px; }
+
+    /* ── Admin: badge dependentes ── */
+    .badge-dep-sim { background: #fff6df; color: #9a6700; font-weight: bold; padding: 3px 8px; border-radius: 8px; font-size: 11px; }
+    .badge-dep-nao { background: #eaf7f0; color: #1f7a4d; font-weight: bold; padding: 3px 8px; border-radius: 8px; font-size: 11px; }
+
+    /* ── Loading ── */
+    .loading-overlay {
+      position: fixed; inset: 0; z-index: 8888;
+      background: rgba(30,50,100,0.25);
+      align-items: center; justify-content: center;
+      display: none;
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-spinner {
+      background: white; border-radius: 20px;
+      padding: 32px 40px; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      color: var(--royal-blue-dark); font-weight: bold;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid #dde7ff;
+      border-top-color: var(--royal-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+      padding: 14px 20px; border-radius: 14px;
+      font-size: 14px; font-weight: bold;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.3s ease; max-width: 380px;
+    }
+    .toast.show    { transform: translateY(0); opacity: 1; }
+    .toast.success { background: var(--success-bg); color: var(--success); border: 1.5px solid #6fcf97; }
+    .toast.error   { background: var(--danger-bg);  color: var(--danger);  border: 1.5px solid #fca5a5; }
+    .toast.info    { background: var(--royal-blue-light); color: var(--royal-blue-dark); border: 1.5px solid var(--royal-blue-border); }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 7777;
+      background: rgba(20,40,100,0.3);
+      align-items: center; justify-content: center;
+      display: none;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      background: white; border-radius: var(--radius-lg);
+      padding: 30px; width: 90%; max-width: 440px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 22px;
+    }
+    .modal-header h2 { font-size: 18px; color: var(--royal-blue-dark); }
+    .modal-close {
+      font-size: 20px; cursor: pointer; color: var(--text-soft);
+      background: none; box-shadow: none; padding: 4px 8px; border-radius: 8px;
+    }
+    .modal-close:hover { color: var(--danger); transform: none; box-shadow: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      body { padding: 8px; }
+      .hero { flex-direction: column; }
+      .section-card { width: calc(100% - 24px); padding: 20px 16px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .radio-group { flex-direction: column; }
+      .cpf-wrap { max-width: 100%; }
+      .dash-mini { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner">
+    <div class="spinner"></div>
+    <div id="loadingMsg">Aguarde...</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal login admin -->
+<div class="modal-backdrop" id="modalAdmin">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🔐 Acesso — Departamento Pessoal</h2>
+      <button class="modal-close" onclick="fecharModalAdmin()">×</button>
+    </div>
+    <div class="field">
+      <label for="adminEmail">E-mail corporativo</label>
+      <input type="email" id="adminEmail" placeholder="seu@brasas.com"
+             onkeydown="if(event.key==='Enter') document.getElementById('adminSenha').focus()">
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label for="adminSenha">Senha</label>
+      <input type="password" id="adminSenha" placeholder="••••••••"
+             onkeydown="if(event.key==='Enter') loginAdmin()">
+    </div>
+    <div class="actions" style="margin-top:16px;">
+      <button onclick="loginAdmin()">Acessar</button>
+      <button class="btn-secondary" onclick="fecharModalAdmin()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="app-shell" id="appShell">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-text">
+      <h1 id="heroTitle">Atualização Cadastral 2026</h1>
+      <p id="heroSub">BRASAS English Course — Departamento Pessoal</p>
+    </div>
+    <div class="hero-actions">
+      <button class="btn-ghost" id="btnAdminHero" onclick="abrirLoginAdmin()">Acesso DP</button>
+    </div>
+  </div>
+
+  <!-- ══ CONTEÚDO FUNCIONÁRIO ══ -->
+  <div class="content" id="conteudoFuncionario">
+
+    <!-- PASSO 1 — CPF -->
+    <div id="passo1">
+      <div class="section-card">
+        <div class="section-title"><span class="icon">🔍</span> Identificação do Colaborador</div>
+        <div class="info-box">
+          Bem-vindo(a) ao sistema de Atualização Cadastral 2026.<br>
+          Informe seu <strong>CPF</strong> abaixo para localizarmos seus dados e iniciar o preenchimento.
+        </div>
+        <div class="cpf-wrap">
+          <div class="field" style="margin-bottom:20px;">
+            <label for="inputCPF" style="text-align:center;">CPF <span class="required">*</span></label>
+            <input type="text" id="inputCPF" class="cpf-big"
+                   placeholder="000.000.000-00" maxlength="14"
+                   oninput="formatarCPF(this)"
+                   onkeydown="if(event.key==='Enter') buscarCPF()">
+          </div>
+          <div class="actions" style="justify-content:center;">
+            <button onclick="buscarCPF()">Buscar meus dados</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 2 — Formulário -->
+    <div id="passo2" style="display:none;">
+
+      <div class="section-card">
+        <div class="section-title"><span class="icon">👤</span> Identificação do Colaborador</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>CPF</label>
+            <input type="text" id="showCPF" readonly>
+          </div>
+          <div class="field">
+            <label>Nome Completo</label>
+            <input type="text" id="showNome" readonly>
+          </div>
+          <div class="field">
+            <label>Cargo / Função</label>
+            <input type="text" id="showFuncao" readonly>
+          </div>
+        </div>
+        <div class="help">Dados obtidos do cadastro interno. Em caso de divergência, entre em contato com o RH.</div>
+      </div>
+
+      <!-- Seção 1 -->
+      <div class="section-card">
+        <div class="section-title"><span class="icon">🏠</span> 1. Dados de Contato e Endereço</div>
+
+        <div class="field">
+          <label for="fEndereco">Endereço Residencial <span class="required">*</span></label>
+          <input type="text" id="fEndereco" placeholder="Rua / Av., número...">
+        </div>
+        <div class="grid-3">
+          <div class="field">
+            <label for="fComplemento">Complemento</label>
+            <input type="text" id="fComplemento" placeholder="Apto, Casa, Bloco...">
+          </div>
+          <div class="field">
+            <label for="fBairro">Bairro <span class="required">*</span></label>
+            <input type="text" id="fBairro" placeholder="Nome do bairro">
+          </div>
+          <div class="field">
+            <label for="fCEP">CEP <span class="required">*</span></label>
+            <input type="text" id="fCEP" placeholder="00000-000" maxlength="9" oninput="formatarCEP(this)">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="fCidade">Cidade <span class="required">*</span></label>
+            <input type="text" id="fCidade" placeholder="Nome da cidade">
+          </div>
+          <div class="field">
+            <label for="fEstado">Estado <span class="required">*</span></label>
+            <select id="fEstado">
+              <option value="">— Selecione —</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+              <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+              <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+              <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+              <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+              <option>SP</option><option>SE</option><option>TO</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="fTelefone">Telefone Celular / WhatsApp <span class="required">*</span></label>
+            <input type="text" id="fTelefone" placeholder="(00) 00000-0000" maxlength="15" oninput="formatarTelefone(this)">
+          </div>
+          <div class="field">
+            <label for="fEmail">E-mail Pessoal <span class="required">*</span></label>
+            <input type="email" id="fEmail" placeholder="seu@email.com">
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção 2 -->
+      <div class="section-card">
+        <div class="section-title"><span class="icon">👨‍👩‍👧</span> 2. Estado Civil e Dependentes</div>
+
+        <div class="field">
+          <label>Estado Civil <span class="required">*</span></label>
+          <div class="radio-group" id="grupoEstadoCivil">
+            <label class="radio-item" onclick="selecionarEstadoCivil('Solteiro(a)', this)">
+              <input type="radio" name="estadoCivil" value="Solteiro(a)"> Solteiro(a)
+            </label>
+            <label class="radio-item" onclick="selecionarEstadoCivil('Casado(a)', this)">
+              <input type="radio" name="estadoCivil" value="Casado(a)"> Casado(a)
+            </label>
+            <label class="radio-item" onclick="selecionarEstadoCivil('União Estável', this)">
+              <input type="radio" name="estadoCivil" value="União Estável"> União Estável
+            </label>
+            <label class="radio-item" onclick="selecionarEstadoCivil('Divorciado(a)', this)">
+              <input type="radio" name="estadoCivil" value="Divorciado(a)"> Divorciado(a)
+            </label>
+            <label class="radio-item" onclick="selecionarEstadoCivil('Viúvo(a)', this)">
+              <input type="radio" name="estadoCivil" value="Viúvo(a)"> Viúvo(a)
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Houve alteração no número de dependentes este ano? <span class="required">*</span></label>
+          <div class="toggle-group">
+            <div class="toggle-btn" id="btnNao" onclick="selecionarDependentes('Não')">Não</div>
+            <div class="toggle-btn" id="btnSim" onclick="selecionarDependentes('Sim')">Sim</div>
+          </div>
+        </div>
+
+        <div id="avisoDocumentos" class="warning-box" style="display:none;">
+          ⚠️ Favor enviar cópia da <strong>Certidão de Nascimento / RG e CPF</strong> do dependente para
+          <strong>dp@brasas.com</strong> após o envio deste formulário.
+        </div>
+      </div>
+
+      <!-- Seção 3 -->
+      <div class="section-card">
+        <div class="section-title"><span class="icon">🎓</span> 3. Escolaridade</div>
+        <div class="field">
+          <label for="fEscolaridade">Último nível de instrução concluído <span class="required">*</span></label>
+          <select id="fEscolaridade">
+            <option value="">— Selecione —</option>
+            <option>Ensino Fundamental Incompleto</option>
+            <option>Ensino Fundamental Completo</option>
+            <option>Ensino Médio Incompleto</option>
+            <option>Ensino Médio Completo</option>
+            <option>Técnico / Profissionalizante</option>
+            <option>Ensino Superior Incompleto</option>
+            <option>Ensino Superior Completo</option>
+            <option>Pós-Graduação / Especialização</option>
+            <option>Mestrado</option>
+            <option>Doutorado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Declaração -->
+      <div class="section-card">
+        <div class="section-title"><span class="icon">✅</span> 4. Declaração de Veracidade</div>
+        <div class="declaration-box">
+          Declaro, sob as penas da lei, que as informações acima prestadas são verdadeiras e exatas.
+          Comprometo-me a informar ao departamento de Recursos Humanos, no prazo máximo de
+          <strong>5 (cinco) dias úteis</strong>, qualquer alteração que venha a ocorrer em meus dados cadastrais
+          (mudança de endereço, estado civil, nascimento de filhos, conclusão de cursos, etc.).
+        </div>
+        <div class="actions" style="justify-content:center;">
+          <button class="btn-lg" onclick="submeterForm()">📨 Enviar Declaração</button>
+          <button class="btn-secondary" onclick="voltarPasso1()">← Voltar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 3 — Sucesso -->
+    <div id="passo3" style="display:none;">
+      <div class="section-card success-card">
+        <div class="success-icon">✅</div>
+        <h2>Declaração Enviada com Sucesso!</h2>
+        <p>
+          Sua atualização cadastral foi registrada e a declaração foi encaminhada ao
+          <strong>Departamento Pessoal</strong>. Uma cópia também foi enviada para o seu e-mail pessoal.
+        </p>
+        <p style="margin-top:18px;font-size:13px;">
+          Caso precise enviar documentos de dependentes, encaminhe para <strong>dp@brasas.com</strong>.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /conteudoFuncionario -->
+
+  <!-- ══ PAINEL ADMIN ══ -->
+  <div id="painelAdmin" style="display:none;">
+    <div class="content">
+
+      <!-- Resumo -->
+      <div class="section-card">
+        <div class="section-title"><span class="icon">📊</span> Resumo das Respostas</div>
+        <div class="dash-mini">
+          <div class="dash-mini-card">
+            <div class="num" id="admTotal">—</div>
+            <div class="lbl">Total de respostas</div>
+          </div>
+          <div class="dash-mini-card c-dep">
+            <div class="num" id="admDepSim">—</div>
+            <div class="lbl">Alteração de dep.</div>
+          </div>
+          <div class="dash-mini-card c-novo">
+            <div class="num" id="admHoje">—</div>
+            <div class="lbl">Respostas hoje</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="section-card full">
+        <div class="section-title"><span class="icon">📋</span> Atualizações Cadastrais 2026</div>
+
+        <div class="filtros-row">
+          <input type="text" id="admBusca" placeholder="Buscar por nome ou CPF..." oninput="renderTabelaAdmin()">
+          <select id="admFiltroEstCivil" onchange="renderTabelaAdmin()">
+            <option value="">Todos os estados civis</option>
+            <option>Solteiro(a)</option>
+            <option>Casado(a)</option>
+            <option>União Estável</option>
+            <option>Divorciado(a)</option>
+            <option>Viúvo(a)</option>
+          </select>
+          <select id="admFiltroDep" onchange="renderTabelaAdmin()">
+            <option value="">Alteração dep.: todos</option>
+            <option value="Sim">Sim</option>
+            <option value="Não">Não</option>
+          </select>
+          <button class="btn-success btn-sm" onclick="recarregarAdmin()">↺ Atualizar</button>
+          <button class="btn-sm" onclick="downloadCSV()">⬇ Baixar CSV</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data/Hora</th>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Cargo</th>
+                <th>Endereço</th>
+                <th>Compl.</th>
+                <th>Bairro</th>
+                <th>CEP</th>
+                <th>Cidade</th>
+                <th>UF</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Est. Civil</th>
+                <th>Dep.?</th>
+                <th>Escolaridade</th>
+              </tr>
+            </thead>
+            <tbody id="admTabelaBody">
+              <tr><td colspan="16" style="text-align:center;padding:30px;color:var(--text-soft);">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-info" id="admTabelaInfo"></div>
+      </div>
+
+    </div>
+  </div><!-- /painelAdmin -->
+
+</div><!-- /app-shell -->
+
+<script>
+  /* ══ Estado global ══════════════════════════════════════════════════════════ */
+  var dadosFuncionario       = { cpf: '', nome: '', funcao: '' };
+  var estadoCivilSelecionado = '';
+  var dependentesSelecionado = '';
+
+  var admEmail       = '';
+  var admNome        = '';
+  var admDados       = { headers: [], rows: [] };
+
+  /* ══ Formatação ════════════════════════════════════════════════════════════ */
+
+  function formatarCPF(el) {
+    var v = el.value.replace(/\D/g, '');
+    if      (v.length > 9) v = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6,9) + '-' + v.slice(9,11);
+    else if (v.length > 6) v = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6);
+    else if (v.length > 3) v = v.slice(0,3) + '.' + v.slice(3);
+    el.value = v.slice(0, 14);
+  }
+
+  function formatarCEP(el) {
+    var v = el.value.replace(/\D/g, '');
+    if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5,8);
+    el.value = v.slice(0, 9);
+  }
+
+  function formatarTelefone(el) {
+    var v = el.value.replace(/\D/g, '');
+    if      (v.length > 10) v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7,11);
+    else if (v.length > 6)  v = '(' + v.slice(0,2) + ') ' + v.slice(2,6) + '-' + v.slice(6);
+    else if (v.length > 2)  v = '(' + v.slice(0,2) + ') ' + v.slice(2);
+    else if (v.length > 0)  v = '(' + v;
+    el.value = v.slice(0, 15);
+  }
+
+  /* ══ Fluxo funcionário ══════════════════════════════════════════════════════ */
+
+  function buscarCPF() {
+    var cpf = document.getElementById('inputCPF').value.replace(/\D/g, '');
+    if (cpf.length !== 11) { showToast('Informe um CPF válido com 11 dígitos.', 'error'); return; }
+    mostrarLoading('Buscando seus dados...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        ocultarLoading();
+        if (!res.ok) { showToast(res.msg, 'error'); return; }
+        dadosFuncionario.cpf    = document.getElementById('inputCPF').value;
+        dadosFuncionario.nome   = res.nome;
+        dadosFuncionario.funcao = res.funcao;
+        document.getElementById('showCPF').value    = dadosFuncionario.cpf;
+        document.getElementById('showNome').value   = dadosFuncionario.nome;
+        document.getElementById('showFuncao').value = dadosFuncionario.funcao;
+        document.getElementById('passo1').style.display = 'none';
+        document.getElementById('passo2').style.display = 'block';
+        window.scrollTo(0, 0);
+      })
+      .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+      .buscarFuncionarioPorCPF(document.getElementById('inputCPF').value);
+  }
+
+  function selecionarEstadoCivil(valor, labelEl) {
+    estadoCivilSelecionado = valor;
+    document.querySelectorAll('#grupoEstadoCivil .radio-item').forEach(function(el) { el.classList.remove('selected'); });
+    labelEl.classList.add('selected');
+    var radio = labelEl.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+  }
+
+  function selecionarDependentes(valor) {
+    dependentesSelecionado = valor;
+    document.getElementById('btnSim').classList.toggle('selected', valor === 'Sim');
+    document.getElementById('btnNao').classList.toggle('selected', valor === 'Não');
+    document.getElementById('avisoDocumentos').style.display = valor === 'Sim' ? 'block' : 'none';
+  }
+
+  function voltarPasso1() {
+    document.getElementById('passo2').style.display = 'none';
+    document.getElementById('passo1').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function submeterForm() {
+    var endereco     = document.getElementById('fEndereco').value.trim();
+    var complemento  = document.getElementById('fComplemento').value.trim();
+    var bairro       = document.getElementById('fBairro').value.trim();
+    var cep          = document.getElementById('fCEP').value.trim();
+    var cidade       = document.getElementById('fCidade').value.trim();
+    var estado       = document.getElementById('fEstado').value;
+    var telefone     = document.getElementById('fTelefone').value.trim();
+    var emailPessoal = document.getElementById('fEmail').value.trim();
+    var escolaridade = document.getElementById('fEscolaridade').value;
+
+    if (!endereco)     { showToast('Informe o endereço residencial.', 'error'); return; }
+    if (!bairro)       { showToast('Informe o bairro.', 'error'); return; }
+    if (!cep)          { showToast('Informe o CEP.', 'error'); return; }
+    if (!cidade)       { showToast('Informe a cidade.', 'error'); return; }
+    if (!estado)       { showToast('Selecione o estado.', 'error'); return; }
+    if (!telefone)     { showToast('Informe o telefone celular.', 'error'); return; }
+    if (!emailPessoal || emailPessoal.indexOf('@') < 0) { showToast('Informe um e-mail pessoal válido.', 'error'); return; }
+    if (!estadoCivilSelecionado)  { showToast('Selecione o estado civil.', 'error'); return; }
+    if (!dependentesSelecionado)  { showToast('Responda sobre alteração de dependentes.', 'error'); return; }
+    if (!escolaridade) { showToast('Selecione o nível de escolaridade.', 'error'); return; }
+
+    mostrarLoading('Enviando declaração...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        ocultarLoading();
+        if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
+        document.getElementById('passo2').style.display = 'none';
+        document.getElementById('passo3').style.display = 'block';
+        window.scrollTo(0, 0);
+      })
+      .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+      .enviarDeclaracao({
+        cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
+        endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
+        cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
+        estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
+        escolaridade: escolaridade
+      });
+  }
+
+  /* ══ Admin: autenticação ═══════════════════════════════════════════════════ */
+
+  function abrirLoginAdmin() {
+    document.getElementById('adminEmail').value = '';
+    document.getElementById('adminSenha').value = '';
+    document.getElementById('modalAdmin').classList.add('show');
+    setTimeout(function() { document.getElementById('adminEmail').focus(); }, 200);
+  }
+
+  function fecharModalAdmin() {
+    document.getElementById('modalAdmin').classList.remove('show');
+  }
+
+  function loginAdmin() {
+    var email = document.getElementById('adminEmail').value.trim();
+    var senha = document.getElementById('adminSenha').value;
+    if (!email || email.indexOf('@') < 0) { showToast('Informe um e-mail válido.', 'error'); return; }
+    if (!senha || !senha.trim()) { showToast('Informe a senha.', 'error'); return; }
+    fecharModalAdmin();
+    mostrarLoading('Verificando acesso...');
+
+    var loginTimeout = setTimeout(function() {
+      ocultarLoading();
+      showToast('Tempo esgotado ao verificar acesso. Tente novamente.', 'error');
+    }, 30000);
+
+    try {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          clearTimeout(loginTimeout);
+          ocultarLoading();
+          if (!res.ok) { showToast(res.msg, 'error'); return; }
+          admEmail = email;
+          admNome  = res.nomeAdmin;
+          admDados = { headers: res.headers, rows: res.rows };
+          ativarPainelAdmin();
+        })
+        .withFailureHandler(function(err) {
+          clearTimeout(loginTimeout);
+          ocultarLoading();
+          showToast('Erro: ' + (err && err.message ? err.message : 'Falha ao verificar acesso.'), 'error');
+        })
+        .getAdminData(email, senha);
+    } catch (e) {
+      clearTimeout(loginTimeout);
+      ocultarLoading();
+      showToast('Erro ao conectar: ' + e.message, 'error');
+    }
+  }
+
+  function recarregarAdmin() {
+    if (!admEmail) return;
+    mostrarLoading('Atualizando dados...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        ocultarLoading();
+        if (!res.ok) { showToast(res.msg, 'error'); return; }
+        admDados = { headers: res.headers, rows: res.rows };
+        atualizarDashAdmin();
+        renderTabelaAdmin();
+        showToast('Dados atualizados.', 'success');
+      })
+      .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+      .getAdminData(admEmail);
+  }
+
+  function sairAdmin() {
+    admEmail = '';
+    admNome  = '';
+    admDados = { headers: [], rows: [] };
+    document.getElementById('painelAdmin').style.display      = 'none';
+    document.getElementById('conteudoFuncionario').style.display = 'block';
+    document.getElementById('appShell').classList.remove('wide');
+    document.getElementById('heroTitle').textContent = 'Atualização Cadastral 2026';
+    document.getElementById('heroSub').textContent   = 'BRASAS English Course — Departamento Pessoal';
+    document.getElementById('btnAdminHero').textContent = 'Acesso DP';
+    document.getElementById('btnAdminHero').onclick = abrirLoginAdmin;
+    window.scrollTo(0, 0);
+  }
+
+  /* ══ Admin: renderização ═══════════════════════════════════════════════════ */
+
+  function ativarPainelAdmin() {
+    document.getElementById('conteudoFuncionario').style.display = 'none';
+    document.getElementById('painelAdmin').style.display         = 'block';
+    document.getElementById('appShell').classList.add('wide');
+    document.getElementById('heroTitle').textContent = 'Painel — Departamento Pessoal';
+    document.getElementById('heroSub').textContent   = 'Bem-vindo(a), ' + admNome + ' · Atualizações Cadastrais 2026';
+    document.getElementById('btnAdminHero').textContent = 'Sair';
+    document.getElementById('btnAdminHero').onclick = sairAdmin;
+    atualizarDashAdmin();
+    renderTabelaAdmin();
+    window.scrollTo(0, 0);
+  }
+
+  function atualizarDashAdmin() {
+    var rows   = admDados.rows;
+    var total  = rows.length;
+    var depIdx = admDados.headers.indexOf('Alteração Dependentes');
+    var dtIdx  = admDados.headers.indexOf('Data/Hora');
+
+    var depSim = 0;
+    var hoje   = new Date();
+    var hojeFmt = (hoje.getDate() < 10 ? '0' : '') + hoje.getDate() + '/' +
+                  (hoje.getMonth() < 9 ? '0' : '') + (hoje.getMonth() + 1) + '/' +
+                  hoje.getFullYear();
+    var countHoje = 0;
+
+    rows.forEach(function(r) {
+      if (depIdx >= 0 && String(r[depIdx]).toLowerCase() === 'sim') depSim++;
+      if (dtIdx  >= 0 && String(r[dtIdx]).slice(0,10) === hojeFmt) countHoje++;
+    });
+
+    document.getElementById('admTotal').textContent  = total;
+    document.getElementById('admDepSim').textContent = depSim;
+    document.getElementById('admHoje').textContent   = countHoje;
+  }
+
+  function renderTabelaAdmin() {
+    var busca   = document.getElementById('admBusca').value.toLowerCase().trim();
+    var estCivil = document.getElementById('admFiltroEstCivil').value;
+    var filtroDep = document.getElementById('admFiltroDep').value;
+
+    var rows    = admDados.rows;
+    var headers = admDados.headers;
+
+    var nomeIdx  = headers.indexOf('Nome');
+    var cpfIdx   = headers.indexOf('CPF');
+    var cargoIdx = headers.indexOf('Cargo');
+    var endIdx   = headers.indexOf('Endereço');
+    var cplIdx   = headers.indexOf('Complemento');
+    var bairIdx  = headers.indexOf('Bairro');
+    var cepIdx   = headers.indexOf('CEP');
+    var cidIdx   = headers.indexOf('Cidade');
+    var estIdx   = headers.indexOf('Estado');
+    var telIdx   = headers.indexOf('Telefone');
+    var emlIdx   = headers.indexOf('E-mail Pessoal');
+    var ecIdx    = headers.indexOf('Estado Civil');
+    var depIdx   = headers.indexOf('Alteração Dependentes');
+    var escIdx   = headers.indexOf('Escolaridade');
+    var dtIdx    = headers.indexOf('Data/Hora');
+
+    var tbody = document.getElementById('admTabelaBody');
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:36px;color:var(--text-soft);">Nenhuma resposta cadastrada ainda.</td></tr>';
+      document.getElementById('admTabelaInfo').textContent = '';
+      return;
+    }
+
+    var filtradas = rows.filter(function(r) {
+      var nome = nomeIdx >= 0 ? String(r[nomeIdx]).toLowerCase() : '';
+      var cpf  = cpfIdx  >= 0 ? String(r[cpfIdx]).toLowerCase()  : '';
+      if (busca    && nome.indexOf(busca) < 0 && cpf.indexOf(busca) < 0) return false;
+      if (estCivil && ecIdx >= 0 && r[ecIdx] !== estCivil) return false;
+      if (filtroDep && depIdx >= 0 && r[depIdx] !== filtroDep) return false;
+      return true;
+    });
+
+    if (!filtradas.length) {
+      tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:36px;color:var(--text-soft);">Nenhum resultado para os filtros selecionados.</td></tr>';
+      document.getElementById('admTabelaInfo').textContent = '';
+      return;
+    }
+
+    function cel(r, idx) { return idx >= 0 ? esc(r[idx]) : '—'; }
+
+    tbody.innerHTML = filtradas.map(function(r, i) {
+      var depVal = depIdx >= 0 ? r[depIdx] : '';
+      var depBadge = depVal.toLowerCase() === 'sim'
+        ? '<span class="badge-dep-sim">SIM</span>'
+        : '<span class="badge-dep-nao">NÃO</span>';
+      return '<tr>' +
+        '<td style="color:var(--text-soft);font-size:11px;">' + (i + 1) + '</td>' +
+        '<td>' + cel(r, dtIdx)   + '</td>' +
+        '<td style="font-weight:bold;">' + cel(r, nomeIdx)  + '</td>' +
+        '<td>' + cel(r, cpfIdx)  + '</td>' +
+        '<td style="color:var(--text-soft);">' + cel(r, cargoIdx) + '</td>' +
+        '<td>' + cel(r, endIdx)  + '</td>' +
+        '<td style="color:var(--text-soft);">' + cel(r, cplIdx)  + '</td>' +
+        '<td>' + cel(r, bairIdx) + '</td>' +
+        '<td>' + cel(r, cepIdx)  + '</td>' +
+        '<td>' + cel(r, cidIdx)  + '</td>' +
+        '<td>' + cel(r, estIdx)  + '</td>' +
+        '<td>' + cel(r, telIdx)  + '</td>' +
+        '<td style="color:var(--text-soft);">' + cel(r, emlIdx) + '</td>' +
+        '<td>' + cel(r, ecIdx)   + '</td>' +
+        '<td>' + depBadge        + '</td>' +
+        '<td style="color:var(--text-soft);">' + cel(r, escIdx) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    document.getElementById('admTabelaInfo').textContent =
+      'Exibindo ' + filtradas.length + ' de ' + rows.length + ' respostas.';
+  }
+
+  /* ══ Admin: download CSV ════════════════════════════════════════════════════ */
+
+  function downloadCSV() {
+    var headers = admDados.headers;
+    var rows    = admDados.rows;
+
+    if (!rows.length) { showToast('Não há dados para baixar.', 'error'); return; }
+
+    var csvRows = [headers].concat(rows);
+    var csv = csvRows.map(function(row) {
+      return row.map(function(cell) {
+        var s = String(cell || '').replace(/"/g, '""');
+        return '"' + s + '"';
+      }).join(',');
+    }).join('\r\n');
+
+    var bom  = '﻿';
+    var blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'atualizacoes_cadastrais_2026.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Download iniciado: atualizacoes_cadastrais_2026.csv', 'success');
+  }
+
+  /* ══ Utilitários UI ═════════════════════════════════════════════════════════ */
+
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function mostrarLoading(msg) {
+    document.getElementById('loadingMsg').textContent = msg || 'Aguarde...';
+    document.getElementById('loadingOverlay').classList.add('show');
+  }
+  function ocultarLoading() {
+    document.getElementById('loadingOverlay').classList.remove('show');
+  }
+
+  var toastTimer;
+  function showToast(msg, tipo) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = 'toast ' + (tipo || 'info') + ' show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { t.classList.remove('show'); }, 4500);
+  }
+
+  document.getElementById('modalAdmin').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('modalAdmin')) fecharModalAdmin();
+  });
+</script>
+</body>
+</html>
