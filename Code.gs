@@ -1,7 +1,8 @@
-var SPREADSHEET_ID   = '1BDiPjv0FqRJp5EwcvLdYXVvEAWesvwdEgbhYdnTlqPY';
-var SHEET_GID        = 566990656;
-var EMAIL_DP         = 'dp@brasas.com';
-var NOME_ABA         = 'Atualizações Cadastrais 2026';
+var SPREADSHEET_ID       = '1BDiPjv0FqRJp5EwcvLdYXVvEAWesvwdEgbhYdnTlqPY';
+var SHEET_GID            = 566990656;
+var EMAIL_DP             = 'dp@brasas.com';
+var NOME_ABA             = 'Atualizações Cadastrais 2026';
+var PASTA_DOCUMENTOS_ID  = '1k-15X2qEwOxrAXYY3u6TFFL3rRXZTNzk';
 
 // ── Entry point ──────────────────────────────────────────────────────────────
 
@@ -60,22 +61,54 @@ function enviarDeclaracao(dados) {
 
   try { salvarResposta(dados, cpfFormatado, hoje); } catch(e) { Logger.log('Erro ao salvar: ' + e.message); }
 
-  var assunto      = 'Atualização Cadastral 2026 — ' + dados.nome;
-  var corpoTexto   = criarEmailTexto(dados, cpfFormatado, dataFormatada);
-  var corpoHtml    = criarEmailHtml(dados, cpfFormatado, dataFormatada);
+  var assunto    = 'Atualização Cadastral 2026 — ' + dados.nome;
+  var corpoTexto = criarEmailTexto(dados, cpfFormatado, dataFormatada);
+  var corpoHtml  = criarEmailHtml(dados, cpfFormatado, dataFormatada);
 
   var destinatarios = [EMAIL_DP];
   if (dados.emailPessoal && dados.emailPessoal.indexOf('@') > 0 && dados.emailPessoal !== EMAIL_DP) {
     destinatarios.push(dados.emailPessoal);
   }
 
+  var attachments = [];
+  var nomeBase    = dados.nome.replace(/\s+/g, '_');
+
+  if (dados.docNome) {
+    try {
+      attachments.push(Utilities.newBlob(
+        Utilities.base64Decode(dados.docNome.data),
+        dados.docNome.type || 'application/octet-stream',
+        'Alteracao_Nome_' + nomeBase + _ext(dados.docNome.name)
+      ));
+    } catch(e) { Logger.log('Erro blob docNome: ' + e); }
+  }
+
+  if (dados.comprovanteRes) {
+    try {
+      attachments.push(Utilities.newBlob(
+        Utilities.base64Decode(dados.comprovanteRes.data),
+        dados.comprovanteRes.type || 'application/octet-stream',
+        'Comprovante_Residencia_' + nomeBase + _ext(dados.comprovanteRes.name)
+      ));
+    } catch(e) { Logger.log('Erro blob comprovanteRes: ' + e); }
+  }
+
+  if (dados.docDependente) {
+    try {
+      attachments.push(Utilities.newBlob(
+        Utilities.base64Decode(dados.docDependente.data),
+        dados.docDependente.type || 'application/octet-stream',
+        'Documento_Dependente_' + nomeBase + _ext(dados.docDependente.name)
+      ));
+    } catch(e) { Logger.log('Erro blob docDependente: ' + e); }
+  }
+
+  _salvarDocumentosNoDrive(dados.nome, attachments);
+
   try {
-    GmailApp.sendEmail(
-      destinatarios.join(','),
-      assunto,
-      corpoTexto,
-      { htmlBody: corpoHtml, name: 'BRASAS — Departamento Pessoal' }
-    );
+    var opts = { htmlBody: corpoHtml, name: 'BRASAS — Departamento Pessoal' };
+    if (attachments.length > 0) opts.attachments = attachments;
+    GmailApp.sendEmail(destinatarios.join(','), assunto, corpoTexto, opts);
     return { ok: true };
   } catch(e) {
     return { ok: false, msg: e.message };
@@ -88,17 +121,28 @@ function salvarResposta(dados, cpfFormatado, data) {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName(NOME_ABA);
 
+  var NOVOS_HEADERS = ['Doc. Dependente', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência'];
+
   if (!sheet) {
     sheet = ss.insertSheet(NOME_ABA);
     var headers = [
       'Data/Hora', 'Nome', 'CPF', 'Cargo',
       'Endereço', 'Complemento', 'Bairro', 'CEP', 'Cidade', 'Estado',
       'Telefone', 'E-mail Pessoal', 'Estado Civil', 'Alteração Dependentes', 'Escolaridade'
-    ];
+    ].concat(NOVOS_HEADERS);
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length)
          .setFontWeight('bold').setBackground('#4169e1').setFontColor('white');
     sheet.setFrozenRows(1);
+  } else {
+    var existH = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+    NOVOS_HEADERS.forEach(function(h) {
+      if (existH.indexOf(h) < 0) {
+        var c = sheet.getLastColumn() + 1;
+        sheet.getRange(1, c).setValue(h).setFontWeight('bold').setBackground('#4169e1').setFontColor('white');
+        existH.push(h);
+      }
+    });
   }
 
   sheet.appendRow([
@@ -106,36 +150,59 @@ function salvarResposta(dados, cpfFormatado, data) {
     dados.nome, cpfFormatado, dados.funcao,
     dados.endereco, dados.complemento || '', dados.bairro, dados.cep,
     dados.cidade, dados.estado, dados.telefone, dados.emailPessoal,
-    dados.estadoCivil, dados.alteracaoDependentes, dados.escolaridade
+    dados.estadoCivil, dados.alteracaoDependentes, dados.escolaridade,
+    dados.docDependente  ? 'Sim' : 'Não',
+    dados.alteracaoNome  || 'Não',
+    dados.nomeAtualizado || '',
+    dados.docNome        ? 'Sim' : 'Não',
+    dados.comprovanteRes ? 'Sim' : 'Não'
   ]);
 }
 
 // ── Corpo texto plain ─────────────────────────────────────────────────────────
 
 function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
-  return [
+  var linhas = [
     'DECLARAÇÃO DE ATUALIZAÇÃO CADASTRAL – ANO 2026',
     '',
     'Eu, ' + dados.nome + ', inscrito(a) no CPF sob o nº ' + cpfFormatado +
     ', ocupante do cargo de ' + dados.funcao +
     ', declaro para os devidos fins de atualização de meu registro funcional e ' +
     'cumprimento das obrigações junto ao eSocial, que meus dados seguem conforme abaixo:',
-    '',
+    ''
+  ];
+
+  if (dados.alteracaoNome === 'Sim') {
+    linhas = linhas.concat([
+      'Alteração de Nome',
+      'Nome Atualizado: ' + (dados.nomeAtualizado || '—'),
+      'Documento comprobatório: enviado em anexo',
+      ''
+    ]);
+  }
+
+  linhas = linhas.concat([
     '1. Dados de Contato e Endereço',
     'Endereço Residencial: ' + dados.endereco,
     'Complemento: ' + (dados.complemento || '—') + '   Bairro: ' + dados.bairro + '   CEP: ' + dados.cep,
     'Cidade: ' + dados.cidade + '   Estado: ' + dados.estado,
     'Telefone Celular/WhatsApp: ' + dados.telefone,
     'E-mail Pessoal: ' + dados.emailPessoal,
+    'Comprovante de Residência: ' + (dados.comprovanteRes ? 'enviado em anexo' : 'não enviado'),
     '',
     '2. Estado Civil e Dependentes',
     'Estado Civil: ' + dados.estadoCivil,
-    'Houve alteração no número de dependentes este ano? ' + dados.alteracaoDependentes,
+    'Houve alteração no número de dependentes este ano? ' + dados.alteracaoDependentes
+  ]);
+
+  if (dados.alteracaoDependentes === 'Sim') {
+    linhas.push('Documento do dependente: ' + (dados.docDependente ? 'enviado em anexo' : 'não enviado'));
+  }
+
+  linhas = linhas.concat([
     '',
     '3. Escolaridade',
     'Último nível de instrução concluído: ' + dados.escolaridade,
-    '',
-    'Caso tenha alguma alteração, enviar os documentos correspondentes para atualização.',
     '',
     '4. Declaração de Veracidade',
     'Declaro, sob as penas da lei, que as informações acima prestadas são verdadeiras e exatas. ' +
@@ -148,7 +215,29 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
     'Assinatura do Colaborador',
     '_________________________________',
     dados.nome
-  ].join('\n');
+  ]);
+
+  return linhas.join('\n');
+}
+
+// ── Helper ────────────────────────────────────────────────────────────────────
+
+function _ext(filename) {
+  if (!filename) return '';
+  var i = filename.lastIndexOf('.');
+  return i >= 0 ? filename.slice(i).toLowerCase() : '';
+}
+
+function _salvarDocumentosNoDrive(nomeFunc, blobs) {
+  if (!blobs || blobs.length === 0) return;
+  try {
+    var pastaRaiz = DriveApp.getFolderById(PASTA_DOCUMENTOS_ID);
+    var iterador  = pastaRaiz.getFoldersByName(nomeFunc);
+    var subPasta  = iterador.hasNext() ? iterador.next() : pastaRaiz.createFolder(nomeFunc);
+    blobs.forEach(function(blob) { subPasta.createFile(blob); });
+  } catch(e) {
+    Logger.log('Erro ao salvar no Drive: ' + e);
+  }
 }
 
 // ── Painel Admin ─────────────────────────────────────────────────────────────
@@ -224,6 +313,29 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
     ? '( &nbsp; ) Não &nbsp;&nbsp;&nbsp; <strong>( X ) Sim</strong>'
     : '<strong>( X ) Não</strong> &nbsp;&nbsp;&nbsp; ( &nbsp; ) Sim';
 
+  var secaoAlteracaoNome = '';
+  if (dados.alteracaoNome === 'Sim') {
+    secaoAlteracaoNome =
+      '<div style="border:1.5px solid #4169e1;border-radius:12px;padding:18px 20px;margin-bottom:16px;">' +
+        '<div style="font-size:14px;font-weight:bold;color:#2f55cc;margin-bottom:12px;">Alteração de Nome</div>' +
+        '<table style="width:100%;border-collapse:collapse;">' +
+          campo('Nome Atualizado:', dados.nomeAtualizado || '—') +
+          campo('Documento:', 'Enviado em anexo') +
+        '</table>' +
+      '</div>';
+  }
+
+  var docDepStatus = '';
+  if (dados.alteracaoDependentes === 'Sim') {
+    docDepStatus = dados.docDependente
+      ? '<p style="font-size:12px;color:#1f7a4d;background:#eaf7f0;border:1px solid #6fcf97;border-radius:8px;padding:10px 14px;margin-top:10px;">' +
+          '📎 Documento do dependente enviado em anexo.' +
+        '</p>'
+      : '<p style="font-size:12px;color:#9a6700;background:#fff6df;border:1px solid #f0c060;border-radius:8px;padding:10px 14px;margin-top:10px;">' +
+          '⚠️ Nenhum documento do dependente foi anexado.' +
+        '</p>';
+  }
+
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f6fd;font-family:Arial,sans-serif;">' +
   '<div style="max-width:680px;margin:0 auto;padding:24px 16px;">' +
 
@@ -248,6 +360,9 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
         'registro funcional e cumprimento das obrigações junto ao eSocial, que meus dados seguem conforme abaixo:' +
       '</p>' +
 
+      // Alteração de nome (condicional)
+      secaoAlteracaoNome +
+
       // Section 1
       '<div style="border:1.5px solid #4169e1;border-radius:12px;padding:18px 20px;margin-bottom:16px;">' +
         '<div style="font-size:14px;font-weight:bold;color:#2f55cc;margin-bottom:12px;">1. Dados de Contato e Endereço</div>' +
@@ -260,6 +375,7 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
           campo('Estado:', dados.estado) +
           campo('Telefone Celular/WhatsApp:', dados.telefone) +
           campo('E-mail Pessoal:', dados.emailPessoal) +
+          campo('Comprovante de Residência:', dados.comprovanteRes ? 'Enviado em anexo' : 'Não enviado') +
         '</table>' +
       '</div>' +
 
@@ -273,11 +389,7 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
           '<strong>Houve alteração no número de dependentes este ano?</strong><br>' +
           '<span style="margin-top:6px;display:inline-block;">' + simNao + '</span>' +
         '</p>' +
-        (dados.alteracaoDependentes === 'Sim'
-          ? '<p style="font-size:12px;color:#9a6700;background:#fff6df;border:1px solid #f0c060;border-radius:8px;padding:10px 14px;margin-top:10px;">' +
-              '⚠️ Favor enviar cópia da Certidão de Nascimento/RG e CPF do dependente para dp@brasas.com.' +
-            '</p>'
-          : '') +
+        docDepStatus +
       '</div>' +
 
       // Section 3
@@ -287,11 +399,6 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
           campo('Último nível de instrução concluído:', dados.escolaridade) +
         '</table>' +
       '</div>' +
-
-      // Note
-      '<p style="font-size:12px;color:#5f6f94;margin-bottom:20px;">' +
-        'Caso tenha alguma alteração, enviar os documentos correspondentes para atualização.' +
-      '</p>' +
 
       // Section 4
       '<div style="background:#f8f9ff;border:1.5px solid #c8d4ff;border-radius:12px;padding:18px 20px;margin-bottom:24px;">' +

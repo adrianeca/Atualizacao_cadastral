@@ -111,6 +111,18 @@
       box-shadow: 0 0 0 3px rgba(65,105,225,0.12);
     }
     input[readonly] { background: #f0f4ff; color: var(--text-soft); cursor: default; }
+    input[type="file"] {
+      width: 100%;
+      border: 2px dashed #d6def7;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 13px;
+      color: var(--text-soft);
+      background: #fafcff;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    input[type="file"]:hover { border-color: var(--royal-blue); background: var(--royal-blue-lighter); }
     .help { font-size: 12px; color: var(--text-soft); margin-top: 5px; line-height: 1.4; }
 
     /* ── CPF input ── */
@@ -449,6 +461,29 @@
           </div>
         </div>
         <div class="help">Dados obtidos do cadastro interno. Em caso de divergência, entre em contato com o RH.</div>
+
+        <div style="margin-top:20px;border-top:1.5px solid #e8eef8;padding-top:18px;">
+          <div class="field">
+            <label>Houve alteração de nome? <span class="required">*</span></label>
+            <div class="toggle-group">
+              <div class="toggle-btn" id="btnNomeNao" onclick="selecionarAlteracaoNome('Não')">Não</div>
+              <div class="toggle-btn" id="btnNomeSim" onclick="selecionarAlteracaoNome('Sim')">Sim</div>
+            </div>
+          </div>
+          <div id="camposAlteracaoNome" style="display:none;margin-top:14px;">
+            <div class="grid-2">
+              <div class="field">
+                <label for="fNomeAtualizado">Nome Completo Atualizado <span class="required">*</span></label>
+                <input type="text" id="fNomeAtualizado" placeholder="Informe o nome completo atualizado">
+              </div>
+              <div class="field">
+                <label for="fDocNome">Documento Comprobatório <span class="required">*</span></label>
+                <input type="file" id="fDocNome" accept=".pdf,.jpg,.jpeg,.png">
+                <div class="help">Certidão de casamento, divórcio ou outro documento (PDF ou imagem, máx. 5 MB)</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Seção 1 -->
@@ -502,6 +537,11 @@
             <input type="email" id="fEmail" placeholder="seu@email.com">
           </div>
         </div>
+        <div class="field" style="margin-top:4px;">
+          <label for="fComprovanteRes">Comprovante de Residência</label>
+          <input type="file" id="fComprovanteRes" accept=".pdf,.jpg,.jpeg,.png">
+          <div class="help">Envie uma cópia do comprovante de residência atualizado (PDF ou imagem, máx. 5 MB)</div>
+        </div>
       </div>
 
       <!-- Seção 2 -->
@@ -537,9 +577,12 @@
           </div>
         </div>
 
-        <div id="avisoDocumentos" class="warning-box" style="display:none;">
-          ⚠️ Favor enviar cópia da <strong>Certidão de Nascimento / RG e CPF</strong> do dependente para
-          <strong>dp@brasas.com</strong> após o envio deste formulário.
+        <div id="secaoDocDependente" style="display:none;margin-top:14px;">
+          <div class="field">
+            <label for="fDocDependente">Documento do Dependente</label>
+            <input type="file" id="fDocDependente" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="help">Certidão de Nascimento ou RG e CPF do dependente (PDF ou imagem, máx. 5 MB). Uma cópia será enviada automaticamente para o seu e-mail e para o DP.</div>
+          </div>
         </div>
       </div>
 
@@ -590,7 +633,7 @@
           <strong>Departamento Pessoal</strong>. Uma cópia também foi enviada para o seu e-mail pessoal.
         </p>
         <p style="margin-top:18px;font-size:13px;">
-          Caso precise enviar documentos de dependentes, encaminhe para <strong>dp@brasas.com</strong>.
+          Os documentos anexados foram encaminhados automaticamente ao Departamento Pessoal e uma cópia para o seu e-mail pessoal.
         </p>
       </div>
     </div>
@@ -680,9 +723,10 @@
 
 <script>
   /* ══ Estado global ══════════════════════════════════════════════════════════ */
-  var dadosFuncionario       = { cpf: '', nome: '', funcao: '' };
-  var estadoCivilSelecionado = '';
-  var dependentesSelecionado = '';
+  var dadosFuncionario         = { cpf: '', nome: '', funcao: '' };
+  var estadoCivilSelecionado   = '';
+  var dependentesSelecionado   = '';
+  var alteracaoNomeSelecionado = '';
 
   var admEmail       = '';
   var admNome        = '';
@@ -749,13 +793,36 @@
     dependentesSelecionado = valor;
     document.getElementById('btnSim').classList.toggle('selected', valor === 'Sim');
     document.getElementById('btnNao').classList.toggle('selected', valor === 'Não');
-    document.getElementById('avisoDocumentos').style.display = valor === 'Sim' ? 'block' : 'none';
+    document.getElementById('secaoDocDependente').style.display = valor === 'Sim' ? 'block' : 'none';
+  }
+
+  function selecionarAlteracaoNome(valor) {
+    alteracaoNomeSelecionado = valor;
+    document.getElementById('btnNomeSim').classList.toggle('selected', valor === 'Sim');
+    document.getElementById('btnNomeNao').classList.toggle('selected', valor === 'Não');
+    document.getElementById('camposAlteracaoNome').style.display = valor === 'Sim' ? 'block' : 'none';
   }
 
   function voltarPasso1() {
     document.getElementById('passo2').style.display = 'none';
     document.getElementById('passo1').style.display = 'block';
     window.scrollTo(0, 0);
+  }
+
+  function lerArquivo(file, callback) {
+    if (!file) { callback(null); return; }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('"' + file.name + '" excede o limite de 5 MB.', 'error');
+      callback(false);
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var b64 = e.target.result.split(',')[1];
+      callback({ name: file.name, type: file.type || 'application/octet-stream', data: b64 });
+    };
+    reader.onerror = function() { callback(null); };
+    reader.readAsDataURL(file);
   }
 
   function submeterForm() {
@@ -769,6 +836,11 @@
     var emailPessoal = document.getElementById('fEmail').value.trim();
     var escolaridade = document.getElementById('fEscolaridade').value;
 
+    if (!alteracaoNomeSelecionado) { showToast('Informe se houve alteração de nome.', 'error'); return; }
+    if (alteracaoNomeSelecionado === 'Sim') {
+      if (!document.getElementById('fNomeAtualizado').value.trim()) { showToast('Informe o nome completo atualizado.', 'error'); return; }
+      if (!document.getElementById('fDocNome').files[0]) { showToast('Anexe o documento comprobatório da alteração de nome.', 'error'); return; }
+    }
     if (!endereco)     { showToast('Informe o endereço residencial.', 'error'); return; }
     if (!bairro)       { showToast('Informe o bairro.', 'error'); return; }
     if (!cep)          { showToast('Informe o CEP.', 'error'); return; }
@@ -780,23 +852,44 @@
     if (!dependentesSelecionado)  { showToast('Responda sobre alteração de dependentes.', 'error'); return; }
     if (!escolaridade) { showToast('Selecione o nível de escolaridade.', 'error'); return; }
 
-    mostrarLoading('Enviando declaração...');
-    google.script.run
-      .withSuccessHandler(function(res) {
-        ocultarLoading();
-        if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
-        document.getElementById('passo2').style.display = 'none';
-        document.getElementById('passo3').style.display = 'block';
-        window.scrollTo(0, 0);
-      })
-      .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
-      .enviarDeclaracao({
-        cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
-        endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
-        cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
-        estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
-        escolaridade: escolaridade
+    var nomeAtualizado = alteracaoNomeSelecionado === 'Sim' ? document.getElementById('fNomeAtualizado').value.trim() : '';
+    var fileDocNome  = alteracaoNomeSelecionado === 'Sim' ? (document.getElementById('fDocNome').files[0] || null) : null;
+    var fileCompRes  = document.getElementById('fComprovanteRes').files[0] || null;
+    var fileDocDep   = dependentesSelecionado === 'Sim' ? (document.getElementById('fDocDependente').files[0] || null) : null;
+
+    mostrarLoading('Preparando arquivos...');
+
+    lerArquivo(fileDocNome, function(docNome) {
+      if (docNome === false) { ocultarLoading(); return; }
+      lerArquivo(fileCompRes, function(comprovanteRes) {
+        if (comprovanteRes === false) { ocultarLoading(); return; }
+        lerArquivo(fileDocDep, function(docDependente) {
+          if (docDependente === false) { ocultarLoading(); return; }
+          mostrarLoading('Enviando declaração...');
+          google.script.run
+            .withSuccessHandler(function(res) {
+              ocultarLoading();
+              if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
+              document.getElementById('passo2').style.display = 'none';
+              document.getElementById('passo3').style.display = 'block';
+              window.scrollTo(0, 0);
+            })
+            .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+            .enviarDeclaracao({
+              cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
+              endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
+              cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
+              estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
+              escolaridade: escolaridade,
+              alteracaoNome: alteracaoNomeSelecionado,
+              nomeAtualizado: nomeAtualizado,
+              docNome: docNome,
+              comprovanteRes: comprovanteRes,
+              docDependente: docDependente
+            });
+        });
       });
+    });
   }
 
   /* ══ Admin: autenticação ═══════════════════════════════════════════════════ */
