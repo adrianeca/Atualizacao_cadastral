@@ -93,14 +93,26 @@ function enviarDeclaracao(dados) {
     } catch(e) { Logger.log('Erro blob comprovanteRes: ' + e); }
   }
 
-  if (dados.docDependente) {
+  if (dados.docsDependente && dados.docsDependente.length > 0) {
+    dados.docsDependente.forEach(function(doc, idx) {
+      try {
+        attachments.push(Utilities.newBlob(
+          Utilities.base64Decode(doc.data),
+          doc.type || 'application/octet-stream',
+          'Documento_Dependente_' + nomeBase + '_' + (idx + 1) + _ext(doc.name)
+        ));
+      } catch(e) { Logger.log('Erro blob docDependente[' + idx + ']: ' + e); }
+    });
+  }
+
+  if (dados.docEscolaridade) {
     try {
       attachments.push(Utilities.newBlob(
-        Utilities.base64Decode(dados.docDependente.data),
-        dados.docDependente.type || 'application/octet-stream',
-        'Documento_Dependente_' + nomeBase + _ext(dados.docDependente.name)
+        Utilities.base64Decode(dados.docEscolaridade.data),
+        dados.docEscolaridade.type || 'application/octet-stream',
+        'Comprovante_Escolaridade_' + nomeBase + _ext(dados.docEscolaridade.name)
       ));
-    } catch(e) { Logger.log('Erro blob docDependente: ' + e); }
+    } catch(e) { Logger.log('Erro blob docEscolaridade: ' + e); }
   }
 
   _salvarDocumentosNoDrive(dados.nome, attachments);
@@ -121,7 +133,7 @@ function salvarResposta(dados, cpfFormatado, data) {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName(NOME_ABA);
 
-  var NOVOS_HEADERS = ['Doc. Dependente', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência'];
+  var NOVOS_HEADERS = ['Doc. Dependente', 'Qtd. Dependentes', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência', 'Doc. Escolaridade'];
 
   if (!sheet) {
     sheet = ss.insertSheet(NOME_ABA);
@@ -151,11 +163,13 @@ function salvarResposta(dados, cpfFormatado, data) {
     dados.endereco, dados.complemento || '', dados.bairro, dados.cep,
     dados.cidade, dados.estado, dados.telefone, dados.emailPessoal,
     dados.estadoCivil, dados.alteracaoDependentes, dados.escolaridade,
-    dados.docDependente  ? 'Sim' : 'Não',
-    dados.alteracaoNome  || 'Não',
-    dados.nomeAtualizado || '',
-    dados.docNome        ? 'Sim' : 'Não',
-    dados.comprovanteRes ? 'Sim' : 'Não'
+    (dados.docsDependente && dados.docsDependente.length > 0) ? 'Sim (' + dados.docsDependente.length + ')' : 'Não',
+    dados.qtdDependentes  || '',
+    dados.alteracaoNome   || 'Não',
+    dados.nomeAtualizado  || '',
+    dados.docNome         ? 'Sim' : 'Não',
+    dados.comprovanteRes  ? 'Sim' : 'Não',
+    dados.docEscolaridade ? 'Sim' : 'Não'
   ]);
 }
 
@@ -196,13 +210,16 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
   ]);
 
   if (dados.alteracaoDependentes === 'Sim') {
-    linhas.push('Documento do dependente: ' + (dados.docDependente ? 'enviado em anexo' : 'não enviado'));
+    linhas.push('Quantidade de dependentes atualmente: ' + (dados.qtdDependentes || '—'));
+    var numDocsDep = (dados.docsDependente && dados.docsDependente.length) || 0;
+    linhas.push('Documentos do dependente: ' + (numDocsDep > 0 ? numDocsDep + ' arquivo(s) enviado(s) em anexo' : 'nenhum enviado'));
   }
 
   linhas = linhas.concat([
     '',
     '3. Escolaridade',
     'Último nível de instrução concluído: ' + dados.escolaridade,
+    'Comprovante de escolaridade: ' + (dados.docEscolaridade ? 'enviado em anexo' : 'não exigido'),
     '',
     '4. Declaração de Veracidade',
     'Declaro, sob as penas da lei, que as informações acima prestadas são verdadeiras e exatas. ' +
@@ -242,23 +259,20 @@ function _salvarDocumentosNoDrive(nomeFunc, blobs) {
 
 // ── Painel Admin ─────────────────────────────────────────────────────────────
 
-// Verifica se o e-mail tem role "admin" na aba USUARIOS e retorna todos os dados.
-// A aba USUARIOS pode ter qualquer layout — buscamos a linha que contém o e-mail
-// e verificamos se alguma célula da mesma linha tem o valor "admin".
-function getAdminData(email, senha) {
-  var emailLimpo = String(email || '').toLowerCase().trim();
-  if (!emailLimpo || emailLimpo.indexOf('@') < 0) {
-    return { ok: false, msg: 'Informe um e-mail válido.' };
-  }
-  if (!senha || !senha.trim()) {
-    return { ok: false, msg: 'Informe a senha.' };
+// Autentica via conta Google (Session) — sem necessidade de senha.
+// Requer que o Web App seja implantado com "Acesso: Qualquer pessoa com conta Google".
+function getAdminDataBySession() {
+  var email = Session.getActiveUser().getEmail();
+  if (!email) {
+    return { ok: false, msg: 'Não foi possível identificar sua conta Google. Verifique se o Web App está configurado para exigir login com Google.' };
   }
 
-  var ss        = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheetUser = ss.getSheetByName('USUARIOS');
+  var emailLimpo = email.toLowerCase().trim();
+  var ss         = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheetUser  = ss.getSheetByName('USUARIOS');
   if (!sheetUser) return { ok: false, msg: 'Aba USUARIOS não encontrada na planilha.' };
 
-  var userData = sheetUser.getDataRange().getValues();
+  var userData  = sheetUser.getDataRange().getValues();
   var nomeAdmin = '';
   var ehAdmin   = false;
 
@@ -270,24 +284,19 @@ function getAdminData(email, senha) {
     }
     if (!temEmail) continue;
 
-    // Verifica senha (coluna B = índice 1)
-    var senhaCadastrada = String(row[1] || '').trim();
-    if (senhaCadastrada !== senha.trim()) {
-      return { ok: false, msg: 'Senha incorreta.' };
-    }
-
     for (var k = 0; k < row.length; k++) {
       if (String(row[k]).toLowerCase().trim() === 'admin') { ehAdmin = true; break; }
     }
     if (ehAdmin) { nomeAdmin = String(row[0] || email); break; }
   }
 
-  if (!ehAdmin) return { ok: false, msg: 'E-mail não encontrado ou sem permissão de acesso.' };
+  if (!ehAdmin) {
+    return { ok: false, msg: 'Sua conta Google (' + email + ') não tem permissão de acesso ao painel DP.' };
+  }
 
-  // Carrega respostas cadastrais
   var sheetResp = ss.getSheetByName(NOME_ABA);
   if (!sheetResp || sheetResp.getLastRow() < 2) {
-    return { ok: true, nomeAdmin: nomeAdmin, headers: [], rows: [], total: 0 };
+    return { ok: true, nomeAdmin: nomeAdmin, email: email, headers: [], rows: [], total: 0 };
   }
 
   var all     = sheetResp.getDataRange().getValues();
@@ -296,7 +305,7 @@ function getAdminData(email, senha) {
     return r.map(function(c) { return c instanceof Date ? Utilities.formatDate(c, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : String(c || ''); });
   });
 
-  return { ok: true, nomeAdmin: nomeAdmin, headers: headers, rows: rows, total: rows.length };
+  return { ok: true, nomeAdmin: nomeAdmin, email: email, headers: headers, rows: rows, total: rows.length };
 }
 
 // ── Corpo HTML ────────────────────────────────────────────────────────────────
@@ -327,13 +336,16 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
 
   var docDepStatus = '';
   if (dados.alteracaoDependentes === 'Sim') {
-    docDepStatus = dados.docDependente
-      ? '<p style="font-size:12px;color:#1f7a4d;background:#eaf7f0;border:1px solid #6fcf97;border-radius:8px;padding:10px 14px;margin-top:10px;">' +
-          '📎 Documento do dependente enviado em anexo.' +
-        '</p>'
-      : '<p style="font-size:12px;color:#9a6700;background:#fff6df;border:1px solid #f0c060;border-radius:8px;padding:10px 14px;margin-top:10px;">' +
-          '⚠️ Nenhum documento do dependente foi anexado.' +
-        '</p>';
+    var numDocsDep = (dados.docsDependente && dados.docsDependente.length) || 0;
+    docDepStatus =
+      '<p style="font-size:13px;color:#1f2a44;margin-top:10px;">Quantidade de dependentes: <strong>' + (dados.qtdDependentes || '—') + '</strong></p>' +
+      (numDocsDep > 0
+        ? '<p style="font-size:12px;color:#1f7a4d;background:#eaf7f0;border:1px solid #6fcf97;border-radius:8px;padding:10px 14px;margin-top:8px;">' +
+            '📎 ' + numDocsDep + ' documento(s) do dependente enviado(s) em anexo.' +
+          '</p>'
+        : '<p style="font-size:12px;color:#9a6700;background:#fff6df;border:1px solid #f0c060;border-radius:8px;padding:10px 14px;margin-top:8px;">' +
+            '⚠️ Nenhum documento do dependente foi anexado.' +
+          '</p>');
   }
 
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f6fd;font-family:Arial,sans-serif;">' +
@@ -397,6 +409,7 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
         '<div style="font-size:14px;font-weight:bold;color:#2f55cc;margin-bottom:12px;">3. Escolaridade</div>' +
         '<table style="width:100%;border-collapse:collapse;">' +
           campo('Último nível de instrução concluído:', dados.escolaridade) +
+          campo('Comprovante:', dados.docEscolaridade ? 'Enviado em anexo' : 'Não exigido') +
         '</table>' +
       '</div>' +
 

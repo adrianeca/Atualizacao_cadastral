@@ -326,30 +326,6 @@
     .toast.error   { background: var(--danger-bg);  color: var(--danger);  border: 1.5px solid #fca5a5; }
     .toast.info    { background: var(--royal-blue-light); color: var(--royal-blue-dark); border: 1.5px solid var(--royal-blue-border); }
 
-    /* ── Modal ── */
-    .modal-backdrop {
-      position: fixed; inset: 0; z-index: 7777;
-      background: rgba(20,40,100,0.3);
-      align-items: center; justify-content: center;
-      display: none;
-    }
-    .modal-backdrop.show { display: flex; }
-    .modal {
-      background: white; border-radius: var(--radius-lg);
-      padding: 30px; width: 90%; max-width: 440px;
-      box-shadow: 0 30px 80px rgba(0,0,0,0.2);
-    }
-    .modal-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 22px;
-    }
-    .modal-header h2 { font-size: 18px; color: var(--royal-blue-dark); }
-    .modal-close {
-      font-size: 20px; cursor: pointer; color: var(--text-soft);
-      background: none; box-shadow: none; padding: 4px 8px; border-radius: 8px;
-    }
-    .modal-close:hover { color: var(--danger); transform: none; box-shadow: none; }
-
     /* ── Responsive ── */
     @media (max-width: 700px) {
       body { padding: 8px; }
@@ -375,29 +351,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Modal login admin -->
-<div class="modal-backdrop" id="modalAdmin">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>🔐 Acesso — Departamento Pessoal</h2>
-      <button class="modal-close" onclick="fecharModalAdmin()">×</button>
-    </div>
-    <div class="field">
-      <label for="adminEmail">E-mail corporativo</label>
-      <input type="email" id="adminEmail" placeholder="seu@brasas.com"
-             onkeydown="if(event.key==='Enter') document.getElementById('adminSenha').focus()">
-    </div>
-    <div class="field" style="margin-top:14px;">
-      <label for="adminSenha">Senha</label>
-      <input type="password" id="adminSenha" placeholder="••••••••"
-             onkeydown="if(event.key==='Enter') loginAdmin()">
-    </div>
-    <div class="actions" style="margin-top:16px;">
-      <button onclick="loginAdmin()">Acessar</button>
-      <button class="btn-secondary" onclick="fecharModalAdmin()">Cancelar</button>
-    </div>
-  </div>
-</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      APP SHELL
@@ -490,11 +443,20 @@
       <div class="section-card">
         <div class="section-title"><span class="icon">🏠</span> 1. Dados de Contato e Endereço</div>
 
+        <div style="max-width:260px;">
+          <div class="field">
+            <label for="fCEP">CEP <span class="required">*</span></label>
+            <input type="text" id="fCEP" placeholder="00000-000" maxlength="9"
+                   oninput="formatarCEP(this)" onblur="buscarCEP()">
+            <div class="help" id="cepStatus"></div>
+          </div>
+        </div>
         <div class="field">
           <label for="fEndereco">Endereço Residencial <span class="required">*</span></label>
           <input type="text" id="fEndereco" placeholder="Rua / Av., número...">
+          <div class="help">Preenchido automaticamente pelo CEP — adicione o número</div>
         </div>
-        <div class="grid-3">
+        <div class="grid-2">
           <div class="field">
             <label for="fComplemento">Complemento</label>
             <input type="text" id="fComplemento" placeholder="Apto, Casa, Bloco...">
@@ -502,10 +464,6 @@
           <div class="field">
             <label for="fBairro">Bairro <span class="required">*</span></label>
             <input type="text" id="fBairro" placeholder="Nome do bairro">
-          </div>
-          <div class="field">
-            <label for="fCEP">CEP <span class="required">*</span></label>
-            <input type="text" id="fCEP" placeholder="00000-000" maxlength="9" oninput="formatarCEP(this)">
           </div>
         </div>
         <div class="grid-2">
@@ -579,9 +537,19 @@
 
         <div id="secaoDocDependente" style="display:none;margin-top:14px;">
           <div class="field">
-            <label for="fDocDependente">Documento do Dependente</label>
-            <input type="file" id="fDocDependente" accept=".pdf,.jpg,.jpeg,.png">
-            <div class="help">Certidão de Nascimento ou RG e CPF do dependente (PDF ou imagem, máx. 5 MB). Uma cópia será enviada automaticamente para o seu e-mail e para o DP.</div>
+            <label for="fQtdDependentes">Quantidade de dependentes atualmente <span class="required">*</span></label>
+            <select id="fQtdDependentes" style="max-width:200px;">
+              <option value="">— Selecione —</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+              <option>5</option><option>6</option><option>7</option><option>8</option>
+              <option>9</option><option>10 ou mais</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Documentos dos Dependentes</label>
+            <div id="containerDocsDependente"></div>
+            <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="adicionarDocDep()">+ Adicionar documento</button>
+            <div class="help" style="margin-top:8px;">Certidão de Nascimento ou RG e CPF do dependente (PDF ou imagem, máx. 5 MB cada). Os documentos serão enviados automaticamente para o seu e-mail e para o DP.</div>
           </div>
         </div>
       </div>
@@ -591,7 +559,7 @@
         <div class="section-title"><span class="icon">🎓</span> 3. Escolaridade</div>
         <div class="field">
           <label for="fEscolaridade">Último nível de instrução concluído <span class="required">*</span></label>
-          <select id="fEscolaridade">
+          <select id="fEscolaridade" onchange="onEscolaridadeChange()">
             <option value="">— Selecione —</option>
             <option>Ensino Fundamental Incompleto</option>
             <option>Ensino Fundamental Completo</option>
@@ -605,6 +573,13 @@
             <option>Doutorado</option>
           </select>
         </div>
+        <div id="secaoDocEscolaridade" style="display:none;margin-top:16px;">
+          <div class="field">
+            <label for="fDocEscolaridade">Comprovante de escolaridade <span class="required">*</span></label>
+            <input type="file" id="fDocEscolaridade" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="help">Diploma, certificado ou declaração de conclusão (PDF ou imagem, máx. 5 MB)</div>
+          </div>
+        </div>
       </div>
 
       <!-- Declaração -->
@@ -616,6 +591,10 @@
           <strong>5 (cinco) dias úteis</strong>, qualquer alteração que venha a ocorrer em meus dados cadastrais
           (mudança de endereço, estado civil, nascimento de filhos, conclusão de cursos, etc.).
         </div>
+        <label class="radio-item" style="max-width:100%;gap:12px;cursor:pointer;margin-bottom:20px;margin-top:4px;">
+          <input type="checkbox" id="chkDeclaracao" style="width:18px;height:18px;min-width:18px;accent-color:var(--royal-blue);cursor:pointer;">
+          <span style="font-size:14px;">Li e concordo com a declaração de veracidade acima.</span>
+        </label>
         <div class="actions" style="justify-content:center;">
           <button class="btn-lg" onclick="submeterForm()">📨 Enviar Declaração</button>
           <button class="btn-secondary" onclick="voltarPasso1()">← Voltar</button>
@@ -746,6 +725,34 @@
     var v = el.value.replace(/\D/g, '');
     if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5,8);
     el.value = v.slice(0, 9);
+    if (v.length === 8) buscarCEP();
+  }
+
+  function buscarCEP() {
+    var cep = document.getElementById('fCEP').value.replace(/\D/g, '');
+    var status = document.getElementById('cepStatus');
+    if (cep.length !== 8) { if (status) status.textContent = ''; return; }
+    status.textContent = 'Buscando endereço...';
+    status.style.color = 'var(--text-soft)';
+    fetch('https://viacep.com.br/ws/' + cep + '/json/')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.erro) {
+          status.textContent = 'CEP não encontrado.';
+          status.style.color = 'var(--danger)';
+          return;
+        }
+        document.getElementById('fEndereco').value = data.logradouro || '';
+        document.getElementById('fBairro').value   = data.bairro     || '';
+        document.getElementById('fCidade').value   = data.localidade || '';
+        document.getElementById('fEstado').value   = data.uf         || '';
+        status.textContent = 'Endereço preenchido — adicione o número.';
+        status.style.color = 'var(--success)';
+      })
+      .catch(function() {
+        status.textContent = 'Não foi possível buscar o CEP.';
+        status.style.color = 'var(--danger)';
+      });
   }
 
   function formatarTelefone(el) {
@@ -794,6 +801,55 @@
     document.getElementById('btnSim').classList.toggle('selected', valor === 'Sim');
     document.getElementById('btnNao').classList.toggle('selected', valor === 'Não');
     document.getElementById('secaoDocDependente').style.display = valor === 'Sim' ? 'block' : 'none';
+    if (valor === 'Sim') {
+      var container = document.getElementById('containerDocsDependente');
+      if (container.children.length === 0) adicionarDocDep();
+    }
+  }
+
+  function adicionarDocDep() {
+    var container = document.getElementById('containerDocsDependente');
+    var div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.pdf,.jpg,.jpeg,.png';
+    inp.className = 'docDependenteFile';
+    inp.style.flex = '1';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '✕';
+    btn.className = 'btn-danger btn-sm';
+    btn.style.whiteSpace = 'nowrap';
+    btn.onclick = function() {
+      if (container.children.length > 1) div.remove();
+      else showToast('Deve haver pelo menos um campo de documento.', 'info');
+    };
+    div.appendChild(inp);
+    div.appendChild(btn);
+    container.appendChild(div);
+  }
+
+  function onEscolaridadeChange() {
+    var val = document.getElementById('fEscolaridade').value;
+    var mostrar = val && val !== 'Ensino Fundamental Incompleto';
+    document.getElementById('secaoDocEscolaridade').style.display = mostrar ? 'block' : 'none';
+  }
+
+  function lerArquivos(files, callback) {
+    if (!files || files.length === 0) { callback([]); return; }
+    var resultados = new Array(files.length);
+    var restantes  = files.length;
+    var houve_erro = false;
+    files.forEach(function(file, idx) {
+      lerArquivo(file, function(res) {
+        if (houve_erro) return;
+        if (res === false) { houve_erro = true; callback(false); return; }
+        resultados[idx] = res;
+        restantes--;
+        if (restantes === 0) callback(resultados);
+      });
+    });
   }
 
   function selecionarAlteracaoNome(valor) {
@@ -850,12 +906,30 @@
     if (!emailPessoal || emailPessoal.indexOf('@') < 0) { showToast('Informe um e-mail pessoal válido.', 'error'); return; }
     if (!estadoCivilSelecionado)  { showToast('Selecione o estado civil.', 'error'); return; }
     if (!dependentesSelecionado)  { showToast('Responda sobre alteração de dependentes.', 'error'); return; }
+    if (dependentesSelecionado === 'Sim' && !document.getElementById('fQtdDependentes').value) {
+      showToast('Informe a quantidade atual de dependentes.', 'error'); return;
+    }
     if (!escolaridade) { showToast('Selecione o nível de escolaridade.', 'error'); return; }
+    if (escolaridade !== 'Ensino Fundamental Incompleto' && !document.getElementById('fDocEscolaridade').files[0]) {
+      showToast('Anexe o comprovante de escolaridade.', 'error'); return;
+    }
+    if (!document.getElementById('chkDeclaracao').checked) {
+      showToast('Você precisa concordar com a declaração de veracidade.', 'error'); return;
+    }
 
+    var qtdDependentes = dependentesSelecionado === 'Sim' ? document.getElementById('fQtdDependentes').value : '';
     var nomeAtualizado = alteracaoNomeSelecionado === 'Sim' ? document.getElementById('fNomeAtualizado').value.trim() : '';
-    var fileDocNome  = alteracaoNomeSelecionado === 'Sim' ? (document.getElementById('fDocNome').files[0] || null) : null;
-    var fileCompRes  = document.getElementById('fComprovanteRes').files[0] || null;
-    var fileDocDep   = dependentesSelecionado === 'Sim' ? (document.getElementById('fDocDependente').files[0] || null) : null;
+    var fileDocNome    = alteracaoNomeSelecionado === 'Sim' ? (document.getElementById('fDocNome').files[0] || null) : null;
+    var fileCompRes    = document.getElementById('fComprovanteRes').files[0] || null;
+    var fileDocEsc     = (escolaridade && escolaridade !== 'Ensino Fundamental Incompleto')
+                         ? (document.getElementById('fDocEscolaridade').files[0] || null) : null;
+
+    var filesDocsDep = [];
+    if (dependentesSelecionado === 'Sim') {
+      document.querySelectorAll('.docDependenteFile').forEach(function(inp) {
+        if (inp.files[0]) filesDocsDep.push(inp.files[0]);
+      });
+    }
 
     mostrarLoading('Preparando arquivos...');
 
@@ -863,87 +937,67 @@
       if (docNome === false) { ocultarLoading(); return; }
       lerArquivo(fileCompRes, function(comprovanteRes) {
         if (comprovanteRes === false) { ocultarLoading(); return; }
-        lerArquivo(fileDocDep, function(docDependente) {
-          if (docDependente === false) { ocultarLoading(); return; }
-          mostrarLoading('Enviando declaração...');
-          google.script.run
-            .withSuccessHandler(function(res) {
-              ocultarLoading();
-              if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
-              document.getElementById('passo2').style.display = 'none';
-              document.getElementById('passo3').style.display = 'block';
-              window.scrollTo(0, 0);
-            })
-            .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
-            .enviarDeclaracao({
-              cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
-              endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
-              cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
-              estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
-              escolaridade: escolaridade,
-              alteracaoNome: alteracaoNomeSelecionado,
-              nomeAtualizado: nomeAtualizado,
-              docNome: docNome,
-              comprovanteRes: comprovanteRes,
-              docDependente: docDependente
-            });
+        lerArquivo(fileDocEsc, function(docEscolaridade) {
+          if (docEscolaridade === false) { ocultarLoading(); return; }
+          lerArquivos(filesDocsDep, function(docsDependente) {
+            if (docsDependente === false) { ocultarLoading(); return; }
+            mostrarLoading('Enviando declaração...');
+            google.script.run
+              .withSuccessHandler(function(res) {
+                ocultarLoading();
+                if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
+                document.getElementById('passo2').style.display = 'none';
+                document.getElementById('passo3').style.display = 'block';
+                window.scrollTo(0, 0);
+              })
+              .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+              .enviarDeclaracao({
+                cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
+                endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
+                cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
+                estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
+                qtdDependentes: qtdDependentes,
+                escolaridade: escolaridade,
+                alteracaoNome: alteracaoNomeSelecionado,
+                nomeAtualizado: nomeAtualizado,
+                docNome: docNome,
+                comprovanteRes: comprovanteRes,
+                docEscolaridade: docEscolaridade,
+                docsDependente: docsDependente
+              });
+          });
         });
       });
     });
   }
 
-  /* ══ Admin: autenticação ═══════════════════════════════════════════════════ */
+  /* ══ Admin: autenticação via conta Google ══════════════════════════════════ */
 
   function abrirLoginAdmin() {
-    document.getElementById('adminEmail').value = '';
-    document.getElementById('adminSenha').value = '';
-    document.getElementById('modalAdmin').classList.add('show');
-    setTimeout(function() { document.getElementById('adminEmail').focus(); }, 200);
-  }
-
-  function fecharModalAdmin() {
-    document.getElementById('modalAdmin').classList.remove('show');
-  }
-
-  function loginAdmin() {
-    var email = document.getElementById('adminEmail').value.trim();
-    var senha = document.getElementById('adminSenha').value;
-    if (!email || email.indexOf('@') < 0) { showToast('Informe um e-mail válido.', 'error'); return; }
-    if (!senha || !senha.trim()) { showToast('Informe a senha.', 'error'); return; }
-    fecharModalAdmin();
     mostrarLoading('Verificando acesso...');
-
-    var loginTimeout = setTimeout(function() {
+    var t = setTimeout(function() {
       ocultarLoading();
-      showToast('Tempo esgotado ao verificar acesso. Tente novamente.', 'error');
+      showToast('Tempo esgotado. Tente novamente.', 'error');
     }, 30000);
-
-    try {
-      google.script.run
-        .withSuccessHandler(function(res) {
-          clearTimeout(loginTimeout);
-          ocultarLoading();
-          if (!res.ok) { showToast(res.msg, 'error'); return; }
-          admEmail = email;
-          admNome  = res.nomeAdmin;
-          admDados = { headers: res.headers, rows: res.rows };
-          ativarPainelAdmin();
-        })
-        .withFailureHandler(function(err) {
-          clearTimeout(loginTimeout);
-          ocultarLoading();
-          showToast('Erro: ' + (err && err.message ? err.message : 'Falha ao verificar acesso.'), 'error');
-        })
-        .getAdminData(email, senha);
-    } catch (e) {
-      clearTimeout(loginTimeout);
-      ocultarLoading();
-      showToast('Erro ao conectar: ' + e.message, 'error');
-    }
+    google.script.run
+      .withSuccessHandler(function(res) {
+        clearTimeout(t);
+        ocultarLoading();
+        if (!res.ok) { showToast(res.msg, 'error'); return; }
+        admEmail = res.email;
+        admNome  = res.nomeAdmin;
+        admDados = { headers: res.headers, rows: res.rows };
+        ativarPainelAdmin();
+      })
+      .withFailureHandler(function(err) {
+        clearTimeout(t);
+        ocultarLoading();
+        showToast('Erro: ' + (err && err.message ? err.message : 'Falha ao verificar acesso.'), 'error');
+      })
+      .getAdminDataBySession();
   }
 
   function recarregarAdmin() {
-    if (!admEmail) return;
     mostrarLoading('Atualizando dados...');
     google.script.run
       .withSuccessHandler(function(res) {
@@ -955,7 +1009,7 @@
         showToast('Dados atualizados.', 'success');
       })
       .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
-      .getAdminData(admEmail);
+      .getAdminDataBySession();
   }
 
   function sairAdmin() {
@@ -1142,9 +1196,6 @@
     toastTimer = setTimeout(function() { t.classList.remove('show'); }, 4500);
   }
 
-  document.getElementById('modalAdmin').addEventListener('click', function(e) {
-    if (e.target === document.getElementById('modalAdmin')) fecharModalAdmin();
-  });
 </script>
 </body>
 </html>
