@@ -43,10 +43,11 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 - Complemento, Bairro (auto-preenchido), CEP
 - Cidade (auto-preenchida), Estado (auto-preenchido)
 - Telefone celular, E-mail pessoal
-- **Comprovante de residência** (upload opcional, PDF/imagem, máx. 5 MB)
+- **Comprovante de residência** (upload obrigatório, PDF/imagem, máx. 5 MB)
 
 ### 2. Estado Civil e Dependentes
 - Estado civil (radio)
+- **Documento comprobatório do estado civil** (upload obrigatório, arquivo único, PDF/imagem, máx. 5 MB) — exigido para qualquer opção diferente de Solteiro(a); certidão de casamento, declaração de união estável, certidão de divórcio ou de óbito, conforme o caso
 - Alteração no número de dependentes (Sim/Não obrigatório)
   - Se Sim:
     - Seletor de **quantidade de dependentes atualmente** (obrigatório)
@@ -54,7 +55,7 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 
 ### 3. Escolaridade
 - Último nível de instrução concluído (select)
-- **Comprovante de escolaridade** (upload obrigatório para todos os níveis, exceto Ensino Fundamental Incompleto; PDF/imagem, máx. 5 MB)
+- **Comprovante de escolaridade** (upload obrigatório para todos os níveis, exceto Ensino Fundamental Incompleto; suporta **múltiplos documentos** via botão "+ Adicionar documento"; PDF/imagem, máx. 5 MB cada)
 
 ### 4. Declaração de Veracidade
 - Checkbox obrigatório: "Li e concordo com a declaração de veracidade acima."
@@ -67,10 +68,13 @@ Ao submeter o formulário:
 2. O backend converte os blobs e:
    - **Salva no Drive**: cria (ou reutiliza) uma subpasta com o nome completo do colaborador dentro da pasta de documentos, e salva cada arquivo com nome padronizado:
      - `Alteracao_Nome_NOME.ext`
+     - `Doc_Estado_Civil_NOME.ext`
      - `Comprovante_Residencia_NOME.ext`
      - `Documento_Dependente_NOME_1.ext`, `_2.ext`, etc. (múltiplos)
-     - `Comprovante_Escolaridade_NOME.ext`
+     - `Comprovante_Escolaridade_NOME_1.ext`, `_2.ext`, etc. (múltiplos)
    - **Envia por e-mail**: os documentos vão como anexo no e-mail de declaração cadastral, enviado para `dp@brasas.com` e para o e-mail pessoal do colaborador.
+
+Todos os arquivos são salvos no Drive da conta que fez o deploy do Web App (executa como "Eu — proprietário"), dentro da pasta `PASTA_DOCUMENTOS_ID`, em uma subpasta por colaborador (criada/reutilizada pelo nome completo).
 
 ## Painel Admin
 
@@ -84,7 +88,7 @@ Funcionalidades: resumo (total, alterações de dependentes, respostas hoje), ta
 
 ## Colunas da planilha de respostas
 
-`Data/Hora` · `Nome` · `CPF` · `Cargo` · `Endereço` · `Complemento` · `Bairro` · `CEP` · `Cidade` · `Estado` · `Telefone` · `E-mail Pessoal` · `Estado Civil` · `Alteração Dependentes` · `Escolaridade` · `Doc. Dependente` · `Qtd. Dependentes` · `Alteração de Nome` · `Nome Atualizado` · `Doc. Alt. Nome` · `Comprovante Residência` · `Doc. Escolaridade`
+`Data/Hora` · `Nome` · `CPF` · `Cargo` · `Endereço` · `Complemento` · `Bairro` · `CEP` · `Cidade` · `Estado` · `Telefone` · `E-mail Pessoal` · `Estado Civil` · `Alteração Dependentes` · `Escolaridade` · `Doc. Dependente` · `Qtd. Dependentes` · `Alteração de Nome` · `Nome Atualizado` · `Doc. Alt. Nome` · `Comprovante Residência` · `Doc. Escolaridade` · `Doc. Estado Civil`
 
 As colunas novas são adicionadas automaticamente ao cabeçalho se a aba já existir com o formato anterior.
 

@@ -77,7 +77,6 @@
       font-size: 17px;
       font-weight: bold;
     }
-    .section-title .icon { font-size: 20px; }
 
     /* ── Grid ── */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -374,7 +373,7 @@
     <!-- PASSO 1 — CPF -->
     <div id="passo1">
       <div class="section-card">
-        <div class="section-title"><span class="icon">🔍</span> Identificação do Colaborador</div>
+        <div class="section-title">Identificação do Colaborador</div>
         <div class="info-box">
           Bem-vindo(a) ao sistema de Atualização Cadastral 2026.<br>
           Informe seu <strong>CPF</strong> abaixo para localizarmos seus dados e iniciar o preenchimento.
@@ -398,7 +397,7 @@
     <div id="passo2" style="display:none;">
 
       <div class="section-card">
-        <div class="section-title"><span class="icon">👤</span> Identificação do Colaborador</div>
+        <div class="section-title">Identificação do Colaborador</div>
         <div class="grid-3">
           <div class="field">
             <label>CPF</label>
@@ -441,7 +440,7 @@
 
       <!-- Seção 1 -->
       <div class="section-card">
-        <div class="section-title"><span class="icon">🏠</span> 1. Dados de Contato e Endereço</div>
+        <div class="section-title">1. Dados de Contato e Endereço</div>
 
         <div style="max-width:260px;">
           <div class="field">
@@ -496,7 +495,7 @@
           </div>
         </div>
         <div class="field" style="margin-top:4px;">
-          <label for="fComprovanteRes">Comprovante de Residência</label>
+          <label for="fComprovanteRes">Comprovante de Residência <span class="required">*</span></label>
           <input type="file" id="fComprovanteRes" accept=".pdf,.jpg,.jpeg,.png">
           <div class="help">Envie uma cópia do comprovante de residência atualizado (PDF ou imagem, máx. 5 MB)</div>
         </div>
@@ -504,7 +503,7 @@
 
       <!-- Seção 2 -->
       <div class="section-card">
-        <div class="section-title"><span class="icon">👨‍👩‍👧</span> 2. Estado Civil e Dependentes</div>
+        <div class="section-title">2. Estado Civil e Dependentes</div>
 
         <div class="field">
           <label>Estado Civil <span class="required">*</span></label>
@@ -524,6 +523,14 @@
             <label class="radio-item" onclick="selecionarEstadoCivil('Viúvo(a)', this)">
               <input type="radio" name="estadoCivil" value="Viúvo(a)"> Viúvo(a)
             </label>
+          </div>
+        </div>
+
+        <div id="secaoDocEstadoCivil" style="display:none;margin-bottom:16px;">
+          <div class="field">
+            <label for="fDocEstadoCivil">Documento Comprobatório do Estado Civil <span class="required">*</span></label>
+            <input type="file" id="fDocEstadoCivil" accept=".pdf,.jpg,.jpeg,.png">
+            <div class="help">Certidão de casamento, declaração de união estável, certidão de divórcio ou de óbito, conforme o caso (PDF ou imagem, máx. 5 MB)</div>
           </div>
         </div>
 
@@ -556,7 +563,7 @@
 
       <!-- Seção 3 -->
       <div class="section-card">
-        <div class="section-title"><span class="icon">🎓</span> 3. Escolaridade</div>
+        <div class="section-title">3. Escolaridade</div>
         <div class="field">
           <label for="fEscolaridade">Último nível de instrução concluído <span class="required">*</span></label>
           <select id="fEscolaridade" onchange="onEscolaridadeChange()">
@@ -575,16 +582,17 @@
         </div>
         <div id="secaoDocEscolaridade" style="display:none;margin-top:16px;">
           <div class="field">
-            <label for="fDocEscolaridade">Comprovante de escolaridade <span class="required">*</span></label>
-            <input type="file" id="fDocEscolaridade" accept=".pdf,.jpg,.jpeg,.png">
-            <div class="help">Diploma, certificado ou declaração de conclusão (PDF ou imagem, máx. 5 MB)</div>
+            <label>Comprovante de escolaridade <span class="required">*</span></label>
+            <div id="containerDocsEscolaridade"></div>
+            <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="adicionarDocEscolaridade()">+ Adicionar documento</button>
+            <div class="help" style="margin-top:8px;">Diploma, certificado ou declaração de conclusão (PDF ou imagem, máx. 5 MB cada)</div>
           </div>
         </div>
       </div>
 
       <!-- Declaração -->
       <div class="section-card">
-        <div class="section-title"><span class="icon">✅</span> 4. Declaração de Veracidade</div>
+        <div class="section-title">4. Declaração de Veracidade</div>
         <div class="declaration-box">
           Declaro, sob as penas da lei, que as informações acima prestadas são verdadeiras e exatas.
           Comprometo-me a informar ao departamento de Recursos Humanos, no prazo máximo de
@@ -625,7 +633,7 @@
 
       <!-- Resumo -->
       <div class="section-card">
-        <div class="section-title"><span class="icon">📊</span> Resumo das Respostas</div>
+        <div class="section-title">Resumo das Respostas</div>
         <div class="dash-mini">
           <div class="dash-mini-card">
             <div class="num" id="admTotal">—</div>
@@ -644,7 +652,7 @@
 
       <!-- Tabela -->
       <div class="section-card full">
-        <div class="section-title"><span class="icon">📋</span> Atualizações Cadastrais 2026</div>
+        <div class="section-title">Atualizações Cadastrais 2026</div>
 
         <div class="filtros-row">
           <input type="text" id="admBusca" placeholder="Buscar por nome ou CPF..." oninput="renderTabelaAdmin()">
@@ -794,6 +802,7 @@
     labelEl.classList.add('selected');
     var radio = labelEl.querySelector('input[type="radio"]');
     if (radio) radio.checked = true;
+    document.getElementById('secaoDocEstadoCivil').style.display = valor !== 'Solteiro(a)' ? 'block' : 'none';
   }
 
   function selecionarDependentes(valor) {
@@ -834,6 +843,33 @@
     var val = document.getElementById('fEscolaridade').value;
     var mostrar = val && val !== 'Ensino Fundamental Incompleto';
     document.getElementById('secaoDocEscolaridade').style.display = mostrar ? 'block' : 'none';
+    if (mostrar) {
+      var container = document.getElementById('containerDocsEscolaridade');
+      if (container.children.length === 0) adicionarDocEscolaridade();
+    }
+  }
+
+  function adicionarDocEscolaridade() {
+    var container = document.getElementById('containerDocsEscolaridade');
+    var div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.pdf,.jpg,.jpeg,.png';
+    inp.className = 'docEscolaridadeFile';
+    inp.style.flex = '1';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '✕';
+    btn.className = 'btn-danger btn-sm';
+    btn.style.whiteSpace = 'nowrap';
+    btn.onclick = function() {
+      if (container.children.length > 1) div.remove();
+      else showToast('Deve haver pelo menos um campo de documento.', 'info');
+    };
+    div.appendChild(inp);
+    div.appendChild(btn);
+    container.appendChild(div);
   }
 
   function lerArquivos(files, callback) {
@@ -904,14 +940,20 @@
     if (!estado)       { showToast('Selecione o estado.', 'error'); return; }
     if (!telefone)     { showToast('Informe o telefone celular.', 'error'); return; }
     if (!emailPessoal || emailPessoal.indexOf('@') < 0) { showToast('Informe um e-mail pessoal válido.', 'error'); return; }
+    if (!document.getElementById('fComprovanteRes').files[0]) { showToast('Anexe o comprovante de residência.', 'error'); return; }
     if (!estadoCivilSelecionado)  { showToast('Selecione o estado civil.', 'error'); return; }
+    if (estadoCivilSelecionado !== 'Solteiro(a)' && !document.getElementById('fDocEstadoCivil').files[0]) {
+      showToast('Anexe o documento comprobatório do estado civil.', 'error'); return;
+    }
     if (!dependentesSelecionado)  { showToast('Responda sobre alteração de dependentes.', 'error'); return; }
     if (dependentesSelecionado === 'Sim' && !document.getElementById('fQtdDependentes').value) {
       showToast('Informe a quantidade atual de dependentes.', 'error'); return;
     }
     if (!escolaridade) { showToast('Selecione o nível de escolaridade.', 'error'); return; }
-    if (escolaridade !== 'Ensino Fundamental Incompleto' && !document.getElementById('fDocEscolaridade').files[0]) {
-      showToast('Anexe o comprovante de escolaridade.', 'error'); return;
+    if (escolaridade !== 'Ensino Fundamental Incompleto') {
+      var temDocEsc = false;
+      document.querySelectorAll('.docEscolaridadeFile').forEach(function(inp) { if (inp.files[0]) temDocEsc = true; });
+      if (!temDocEsc) { showToast('Anexe ao menos um comprovante de escolaridade.', 'error'); return; }
     }
     if (!document.getElementById('chkDeclaracao').checked) {
       showToast('Você precisa concordar com a declaração de veracidade.', 'error'); return;
@@ -921,8 +963,15 @@
     var nomeAtualizado = alteracaoNomeSelecionado === 'Sim' ? document.getElementById('fNomeAtualizado').value.trim() : '';
     var fileDocNome    = alteracaoNomeSelecionado === 'Sim' ? (document.getElementById('fDocNome').files[0] || null) : null;
     var fileCompRes    = document.getElementById('fComprovanteRes').files[0] || null;
-    var fileDocEsc     = (escolaridade && escolaridade !== 'Ensino Fundamental Incompleto')
-                         ? (document.getElementById('fDocEscolaridade').files[0] || null) : null;
+    var fileDocEstadoCivil = (estadoCivilSelecionado && estadoCivilSelecionado !== 'Solteiro(a)')
+                         ? (document.getElementById('fDocEstadoCivil').files[0] || null) : null;
+
+    var filesDocsEscolaridade = [];
+    if (escolaridade && escolaridade !== 'Ensino Fundamental Incompleto') {
+      document.querySelectorAll('.docEscolaridadeFile').forEach(function(inp) {
+        if (inp.files[0]) filesDocsEscolaridade.push(inp.files[0]);
+      });
+    }
 
     var filesDocsDep = [];
     if (dependentesSelecionado === 'Sim') {
@@ -935,36 +984,40 @@
 
     lerArquivo(fileDocNome, function(docNome) {
       if (docNome === false) { ocultarLoading(); return; }
-      lerArquivo(fileCompRes, function(comprovanteRes) {
-        if (comprovanteRes === false) { ocultarLoading(); return; }
-        lerArquivo(fileDocEsc, function(docEscolaridade) {
-          if (docEscolaridade === false) { ocultarLoading(); return; }
-          lerArquivos(filesDocsDep, function(docsDependente) {
-            if (docsDependente === false) { ocultarLoading(); return; }
-            mostrarLoading('Enviando declaração...');
-            google.script.run
-              .withSuccessHandler(function(res) {
-                ocultarLoading();
-                if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
-                document.getElementById('passo2').style.display = 'none';
-                document.getElementById('passo3').style.display = 'block';
-                window.scrollTo(0, 0);
-              })
-              .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
-              .enviarDeclaracao({
-                cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
-                endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
-                cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
-                estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
-                qtdDependentes: qtdDependentes,
-                escolaridade: escolaridade,
-                alteracaoNome: alteracaoNomeSelecionado,
-                nomeAtualizado: nomeAtualizado,
-                docNome: docNome,
-                comprovanteRes: comprovanteRes,
-                docEscolaridade: docEscolaridade,
-                docsDependente: docsDependente
-              });
+      lerArquivo(fileDocEstadoCivil, function(docEstadoCivil) {
+        if (docEstadoCivil === false) { ocultarLoading(); return; }
+        lerArquivo(fileCompRes, function(comprovanteRes) {
+          if (comprovanteRes === false) { ocultarLoading(); return; }
+          lerArquivos(filesDocsEscolaridade, function(docsEscolaridade) {
+            if (docsEscolaridade === false) { ocultarLoading(); return; }
+            lerArquivos(filesDocsDep, function(docsDependente) {
+              if (docsDependente === false) { ocultarLoading(); return; }
+              mostrarLoading('Enviando declaração...');
+              google.script.run
+                .withSuccessHandler(function(res) {
+                  ocultarLoading();
+                  if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
+                  document.getElementById('passo2').style.display = 'none';
+                  document.getElementById('passo3').style.display = 'block';
+                  window.scrollTo(0, 0);
+                })
+                .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+                .enviarDeclaracao({
+                  cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
+                  endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
+                  cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
+                  estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
+                  qtdDependentes: qtdDependentes,
+                  escolaridade: escolaridade,
+                  alteracaoNome: alteracaoNomeSelecionado,
+                  nomeAtualizado: nomeAtualizado,
+                  docNome: docNome,
+                  docEstadoCivil: docEstadoCivil,
+                  comprovanteRes: comprovanteRes,
+                  docsEscolaridade: docsEscolaridade,
+                  docsDependente: docsDependente
+                });
+            });
           });
         });
       });

@@ -105,14 +105,26 @@ function enviarDeclaracao(dados) {
     });
   }
 
-  if (dados.docEscolaridade) {
+  if (dados.docEstadoCivil) {
     try {
       attachments.push(Utilities.newBlob(
-        Utilities.base64Decode(dados.docEscolaridade.data),
-        dados.docEscolaridade.type || 'application/octet-stream',
-        'Comprovante_Escolaridade_' + nomeBase + _ext(dados.docEscolaridade.name)
+        Utilities.base64Decode(dados.docEstadoCivil.data),
+        dados.docEstadoCivil.type || 'application/octet-stream',
+        'Doc_Estado_Civil_' + nomeBase + _ext(dados.docEstadoCivil.name)
       ));
-    } catch(e) { Logger.log('Erro blob docEscolaridade: ' + e); }
+    } catch(e) { Logger.log('Erro blob docEstadoCivil: ' + e); }
+  }
+
+  if (dados.docsEscolaridade && dados.docsEscolaridade.length > 0) {
+    dados.docsEscolaridade.forEach(function(doc, idx) {
+      try {
+        attachments.push(Utilities.newBlob(
+          Utilities.base64Decode(doc.data),
+          doc.type || 'application/octet-stream',
+          'Comprovante_Escolaridade_' + nomeBase + '_' + (idx + 1) + _ext(doc.name)
+        ));
+      } catch(e) { Logger.log('Erro blob docEscolaridade[' + idx + ']: ' + e); }
+    });
   }
 
   _salvarDocumentosNoDrive(dados.nome, attachments);
@@ -133,7 +145,7 @@ function salvarResposta(dados, cpfFormatado, data) {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName(NOME_ABA);
 
-  var NOVOS_HEADERS = ['Doc. Dependente', 'Qtd. Dependentes', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência', 'Doc. Escolaridade'];
+  var NOVOS_HEADERS = ['Doc. Dependente', 'Qtd. Dependentes', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência', 'Doc. Escolaridade', 'Doc. Estado Civil'];
 
   if (!sheet) {
     sheet = ss.insertSheet(NOME_ABA);
@@ -169,7 +181,8 @@ function salvarResposta(dados, cpfFormatado, data) {
     dados.nomeAtualizado  || '',
     dados.docNome         ? 'Sim' : 'Não',
     dados.comprovanteRes  ? 'Sim' : 'Não',
-    dados.docEscolaridade ? 'Sim' : 'Não'
+    (dados.docsEscolaridade && dados.docsEscolaridade.length > 0) ? 'Sim (' + dados.docsEscolaridade.length + ')' : 'Não',
+    dados.docEstadoCivil  ? 'Sim' : 'Não'
   ]);
 }
 
@@ -206,6 +219,7 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
     '',
     '2. Estado Civil e Dependentes',
     'Estado Civil: ' + dados.estadoCivil,
+    'Documento comprobatório do estado civil: ' + (dados.docEstadoCivil ? 'enviado em anexo' : 'não exigido'),
     'Houve alteração no número de dependentes este ano? ' + dados.alteracaoDependentes
   ]);
 
@@ -215,11 +229,12 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
     linhas.push('Documentos do dependente: ' + (numDocsDep > 0 ? numDocsDep + ' arquivo(s) enviado(s) em anexo' : 'nenhum enviado'));
   }
 
+  var numDocsEsc = (dados.docsEscolaridade && dados.docsEscolaridade.length) || 0;
   linhas = linhas.concat([
     '',
     '3. Escolaridade',
     'Último nível de instrução concluído: ' + dados.escolaridade,
-    'Comprovante de escolaridade: ' + (dados.docEscolaridade ? 'enviado em anexo' : 'não exigido'),
+    'Comprovante de escolaridade: ' + (numDocsEsc > 0 ? numDocsEsc + ' arquivo(s) enviado(s) em anexo' : 'não exigido'),
     '',
     '4. Declaração de Veracidade',
     'Declaro, sob as penas da lei, que as informações acima prestadas são verdadeiras e exatas. ' +
@@ -396,6 +411,7 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
         '<div style="font-size:14px;font-weight:bold;color:#2f55cc;margin-bottom:12px;">2. Estado Civil e Dependentes</div>' +
         '<table style="width:100%;border-collapse:collapse;">' +
           campo('Estado Civil:', dados.estadoCivil) +
+          campo('Documento Comprobatório:', dados.docEstadoCivil ? 'Enviado em anexo' : 'Não exigido') +
         '</table>' +
         '<p style="font-size:13px;color:#1f2a44;margin-top:10px;">' +
           '<strong>Houve alteração no número de dependentes este ano?</strong><br>' +
@@ -409,7 +425,8 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
         '<div style="font-size:14px;font-weight:bold;color:#2f55cc;margin-bottom:12px;">3. Escolaridade</div>' +
         '<table style="width:100%;border-collapse:collapse;">' +
           campo('Último nível de instrução concluído:', dados.escolaridade) +
-          campo('Comprovante:', dados.docEscolaridade ? 'Enviado em anexo' : 'Não exigido') +
+          campo('Comprovante:', ((dados.docsEscolaridade && dados.docsEscolaridade.length) || 0) > 0
+            ? (dados.docsEscolaridade.length + ' arquivo(s) enviado(s) em anexo') : 'Não exigido') +
         '</table>' +
       '</div>' +
 
