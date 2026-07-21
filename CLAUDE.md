@@ -90,7 +90,7 @@ Acessado pelo botão **"Acesso DP"** no cabeçalho. Autenticação via conta Goo
 - **Formato da aba USUARIOS:** coluna A = e-mail corporativo, coluna C = `admin` ou `dp` para liberar acesso ao painel.
 - Sem senha — a autenticação Google já garante a identidade.
 
-Funcionalidades: resumo (total, alterações de dependentes, respostas hoje), tabela com coluna Unidade, filtrável por nome/CPF/unidade/estado civil/dependentes (filtro de unidade populado dinamicamente a partir dos dados existentes), download CSV.
+Funcionalidades: resumo (total, alterações de dependentes, respostas hoje), tabela com coluna Unidade, filtrável por nome/CPF/unidade/estado civil/dependentes (filtro de unidade populado dinamicamente a partir dos dados existentes), download CSV, botão **"Criar planilha do filtro"** (gera uma nova planilha Google Sheets só com as linhas atualmente filtradas, via `criarPlanilhaFiltrada(headers, rows)`) e botão para abrir a pasta "Funcionários" no Drive (link vem de `getAdminDataBySession()`, campo `pastaDriveUrl`).
 
 ## Colunas da planilha de respostas
 
@@ -128,6 +128,7 @@ USUARIOS_SHEET_GID      // GID da aba USUARIOS dentro da planilha CONTROLES BI
 | `enviarDeclaracao(dados)` | Salva resposta, envia e-mail com anexos, salva no Drive |
 | `salvarResposta(dados, cpf, data)` | Grava linha na aba de respostas (dados de texto em maiúsculo) |
 | `getAdminDataBySession()` | Autentica via Google e retorna dados para o painel admin |
+| `criarPlanilhaFiltrada(headers, rows)` | Cria uma nova planilha Google Sheets com as linhas filtradas no painel admin |
 | `criarEmailHtml(...)` | Gera corpo HTML do e-mail de declaração |
 | `criarEmailTexto(...)` | Gera corpo texto plain do e-mail |
 | `_salvarDocumentosNoDrive(nomeFunc, unidade, blobs)` | Salva arquivos na subpasta unidade → colaborador no Drive |

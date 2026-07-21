@@ -675,6 +675,8 @@
           </select>
           <button class="btn-success btn-sm" onclick="recarregarAdmin()">↺ Atualizar</button>
           <button class="btn-sm" onclick="downloadCSV()">⬇ Baixar CSV</button>
+          <button class="btn-secondary btn-sm" onclick="criarPlanilhaFiltrada()">📊 Criar planilha do filtro</button>
+          <a id="linkDrive" class="btn-secondary btn-sm" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block;">📁 Abrir pasta de documentos</a>
         </div>
 
         <div class="table-wrap">
@@ -1049,7 +1051,7 @@
         if (!res.ok) { showToast(res.msg, 'error'); return; }
         admEmail = res.email;
         admNome  = res.nomeAdmin;
-        admDados = { headers: res.headers, rows: res.rows };
+        admDados = { headers: res.headers, rows: res.rows, pastaDriveUrl: res.pastaDriveUrl };
         ativarPainelAdmin();
       })
       .withFailureHandler(function(err) {
@@ -1066,9 +1068,10 @@
       .withSuccessHandler(function(res) {
         ocultarLoading();
         if (!res.ok) { showToast(res.msg, 'error'); return; }
-        admDados = { headers: res.headers, rows: res.rows };
+        admDados = { headers: res.headers, rows: res.rows, pastaDriveUrl: res.pastaDriveUrl };
         atualizarDashAdmin();
         popularFiltroUnidade();
+        atualizarLinksAdmin();
         renderTabelaAdmin();
         showToast('Dados atualizados.', 'success');
       })
@@ -1102,8 +1105,13 @@
     document.getElementById('btnAdminHero').onclick = sairAdmin;
     atualizarDashAdmin();
     popularFiltroUnidade();
+    atualizarLinksAdmin();
     renderTabelaAdmin();
     window.scrollTo(0, 0);
+  }
+
+  function atualizarLinksAdmin() {
+    if (admDados.pastaDriveUrl) document.getElementById('linkDrive').href = admDados.pastaDriveUrl;
   }
 
   function popularFiltroUnidade() {
@@ -1146,12 +1154,49 @@
     document.getElementById('admHoje').textContent   = countHoje;
   }
 
-  function renderTabelaAdmin() {
+  function obterLinhasFiltradas() {
     var busca   = document.getElementById('admBusca').value.toLowerCase().trim();
     var filtroUnidade = document.getElementById('admFiltroUnidade').value;
     var estCivil = document.getElementById('admFiltroEstCivil').value;
     var filtroDep = document.getElementById('admFiltroDep').value;
 
+    var rows    = admDados.rows;
+    var headers = admDados.headers;
+
+    var nomeIdx = headers.indexOf('Nome');
+    var cpfIdx  = headers.indexOf('CPF');
+    var unidIdx = headers.indexOf('Unidade');
+    var ecIdx   = headers.indexOf('Estado Civil');
+    var depIdx  = headers.indexOf('Alteração Dependentes');
+
+    return rows.filter(function(r) {
+      var nome = nomeIdx >= 0 ? String(r[nomeIdx]).toLowerCase() : '';
+      var cpf  = cpfIdx  >= 0 ? String(r[cpfIdx]).toLowerCase()  : '';
+      if (busca    && nome.indexOf(busca) < 0 && cpf.indexOf(busca) < 0) return false;
+      if (filtroUnidade && unidIdx >= 0 && r[unidIdx] !== filtroUnidade) return false;
+      if (estCivil && ecIdx >= 0 && r[ecIdx] !== estCivil) return false;
+      if (filtroDep && depIdx >= 0 && r[depIdx] !== filtroDep) return false;
+      return true;
+    });
+  }
+
+  function criarPlanilhaFiltrada() {
+    var filtradas = obterLinhasFiltradas();
+    if (!filtradas.length) { showToast('Não há dados para os filtros selecionados.', 'error'); return; }
+
+    mostrarLoading('Criando planilha...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        ocultarLoading();
+        if (!res.ok) { showToast('Erro ao criar planilha: ' + (res.msg || 'tente novamente.'), 'error'); return; }
+        showToast('Planilha criada com sucesso.', 'success');
+        window.open(res.url, '_blank');
+      })
+      .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+      .criarPlanilhaFiltrada(admDados.headers, filtradas);
+  }
+
+  function renderTabelaAdmin() {
     var rows    = admDados.rows;
     var headers = admDados.headers;
 
@@ -1181,15 +1226,7 @@
       return;
     }
 
-    var filtradas = rows.filter(function(r) {
-      var nome = nomeIdx >= 0 ? String(r[nomeIdx]).toLowerCase() : '';
-      var cpf  = cpfIdx  >= 0 ? String(r[cpfIdx]).toLowerCase()  : '';
-      if (busca    && nome.indexOf(busca) < 0 && cpf.indexOf(busca) < 0) return false;
-      if (filtroUnidade && unidIdx >= 0 && r[unidIdx] !== filtroUnidade) return false;
-      if (estCivil && ecIdx >= 0 && r[ecIdx] !== estCivil) return false;
-      if (filtroDep && depIdx >= 0 && r[depIdx] !== filtroDep) return false;
-      return true;
-    });
+    var filtradas = obterLinhasFiltradas();
 
     if (!filtradas.length) {
       tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;padding:36px;color:var(--text-soft);">Nenhum resultado para os filtros selecionados.</td></tr>';

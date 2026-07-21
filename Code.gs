@@ -360,8 +360,11 @@ function getAdminDataBySession() {
 
   var ss        = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheetResp = ss.getSheetByName(NOME_ABA);
+
+  var pastaDriveUrl = 'https://drive.google.com/drive/folders/' + PASTA_DOCUMENTOS_ID;
+
   if (!sheetResp || sheetResp.getLastRow() < 2) {
-    return { ok: true, nomeAdmin: nomeAdmin, email: email, headers: [], rows: [], total: 0 };
+    return { ok: true, nomeAdmin: nomeAdmin, email: email, headers: [], rows: [], total: 0, pastaDriveUrl: pastaDriveUrl };
   }
 
   var all     = sheetResp.getDataRange().getValues();
@@ -370,7 +373,33 @@ function getAdminDataBySession() {
     return r.map(function(c) { return c instanceof Date ? Utilities.formatDate(c, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : String(c || ''); });
   });
 
-  return { ok: true, nomeAdmin: nomeAdmin, email: email, headers: headers, rows: rows, total: rows.length };
+  return { ok: true, nomeAdmin: nomeAdmin, email: email, headers: headers, rows: rows, total: rows.length, pastaDriveUrl: pastaDriveUrl };
+}
+
+// ── Criação de planilha a partir do filtro do painel admin ───────────────────
+
+function criarPlanilhaFiltrada(headers, rows) {
+  try {
+    var nome = 'Atualização Cadastral 2026 - Filtro ' +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd-MM-yyyy HH-mm');
+    var novaPlanilha = SpreadsheetApp.create(nome);
+    var sheet = novaPlanilha.getSheets()[0];
+    sheet.setName('Dados Filtrados');
+
+    if (headers && headers.length > 0) {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers])
+           .setFontWeight('bold').setBackground('#4169e1').setFontColor('white');
+      sheet.setFrozenRows(1);
+    }
+    if (rows && rows.length > 0) {
+      sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+      sheet.autoResizeColumns(1, headers.length);
+    }
+
+    return { ok: true, url: novaPlanilha.getUrl() };
+  } catch(e) {
+    return { ok: false, msg: e.message };
+  }
 }
 
 // ── Corpo HTML ────────────────────────────────────────────────────────────────
