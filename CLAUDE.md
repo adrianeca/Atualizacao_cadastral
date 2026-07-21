@@ -15,8 +15,9 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 |---|---|
 | Planilha principal | `1BDiPjv0FqRJp5EwcvLdYXVvEAWesvwdEgbhYdnTlqPY` |
 | Aba de respostas | `Atualizações Cadastrais 2026` |
-| Aba de usuários admin | `USUARIOS` |
 | Aba de funcionários | `RJ - UNIDADES` (`SHEET_GID = 566990656`) |
+| Planilha de usuários admin | `CONTROLES BI` — `1eZPbzhzjhjHoPwMhAW5YvOZgYiAvlTYc07dRan6Lyoc` (planilha separada da principal) |
+| Aba de usuários admin | `USUARIOS` (`USUARIOS_SHEET_GID = 1120979656`) |
 | Pasta de documentos no Drive (Funcionários) | `1IuU9YLh4kiXg1p-xgNiZruUL9ddnD345` |
 | E-mail do DP | `dp@brasas.com` |
 
@@ -85,8 +86,8 @@ Os dados de texto preenchidos no formulário (nome, cargo, endereço, número, c
 
 Acessado pelo botão **"Acesso DP"** no cabeçalho. Autenticação via conta Google (`Session.getActiveUser().getEmail()`) — sem necessidade de senha.
 
-- A função `getAdminDataBySession()` no `Code.gs` verifica se o e-mail da sessão Google existe na aba `USUARIOS` e se a **coluna C** dessa linha contém `admin` ou `dp` (não sensível a maiúsculas/minúsculas).
-- **Formato da aba USUARIOS:** coluna A = nome, alguma coluna contendo o e-mail corporativo, coluna C = `admin` ou `dp` para liberar acesso ao painel.
+- A função `getAdminDataBySession()` no `Code.gs` verifica se o e-mail da sessão Google existe na aba `USUARIOS` (planilha `CONTROLES BI`, separada da planilha principal) e se a **coluna C** dessa linha contém `admin` ou `dp` (não sensível a maiúsculas/minúsculas).
+- **Formato da aba USUARIOS:** coluna A = e-mail corporativo, coluna C = `admin` ou `dp` para liberar acesso ao painel.
 - Sem senha — a autenticação Google já garante a identidade.
 
 Funcionalidades: resumo (total, alterações de dependentes, respostas hoje), tabela com coluna Unidade, filtrável por nome/CPF/unidade/estado civil/dependentes (filtro de unidade populado dinamicamente a partir dos dados existentes), download CSV.
@@ -108,12 +109,14 @@ As colunas novas são adicionadas automaticamente ao cabeçalho se a aba já exi
 ## Variáveis globais (Code.gs)
 
 ```javascript
-SPREADSHEET_ID      // ID da planilha Google Sheets
-SHEET_GID           // GID da aba de funcionários (RJ - UNIDADES)
-EMAIL_DP            // dp@brasas.com
-NOME_ABA            // Nome da aba de respostas
-PASTA_DOCUMENTOS_ID // ID da pasta no Drive "Funcionários"
-UNIDADES_MAP        // Mapa sigla da unidade (coluna V) → nome completo da pasta
+SPREADSHEET_ID          // ID da planilha Google Sheets principal
+SHEET_GID               // GID da aba de funcionários (RJ - UNIDADES)
+EMAIL_DP                // dp@brasas.com
+NOME_ABA                // Nome da aba de respostas
+PASTA_DOCUMENTOS_ID     // ID da pasta no Drive "Funcionários"
+UNIDADES_MAP            // Mapa sigla da unidade (coluna V) → nome completo da pasta
+USUARIOS_SPREADSHEET_ID // ID da planilha "CONTROLES BI" (usuários admin)
+USUARIOS_SHEET_GID      // GID da aba USUARIOS dentro da planilha CONTROLES BI
 ```
 
 ## Funções principais (Code.gs)

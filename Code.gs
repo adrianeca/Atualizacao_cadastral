@@ -1,8 +1,10 @@
-var SPREADSHEET_ID       = '1BDiPjv0FqRJp5EwcvLdYXVvEAWesvwdEgbhYdnTlqPY';
-var SHEET_GID            = 566990656;
-var EMAIL_DP             = 'dp@brasas.com';
-var NOME_ABA             = 'Atualizações Cadastrais 2026';
-var PASTA_DOCUMENTOS_ID  = '1IuU9YLh4kiXg1p-xgNiZruUL9ddnD345';
+var SPREADSHEET_ID          = '1BDiPjv0FqRJp5EwcvLdYXVvEAWesvwdEgbhYdnTlqPY';
+var SHEET_GID               = 566990656;
+var EMAIL_DP                = 'dp@brasas.com';
+var NOME_ABA                = 'Atualizações Cadastrais 2026';
+var PASTA_DOCUMENTOS_ID     = '1IuU9YLh4kiXg1p-xgNiZruUL9ddnD345';
+var USUARIOS_SPREADSHEET_ID = '1eZPbzhzjhjHoPwMhAW5YvOZgYiAvlTYc07dRan6Lyoc';
+var USUARIOS_SHEET_GID      = 1120979656;
 
 // Sigla da unidade (coluna V da aba de funcionários) → nome completo da pasta no Drive
 var UNIDADES_MAP = {
@@ -226,7 +228,8 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
   var linhas = [
     'ATUALIZAÇÃO CADASTRAL - ANO 2026',
     '',
-    'Este é um e-mail automático - não é necessário respondê-lo. Em caso de dúvidas, entre em contato com o Departamento Pessoal em dp@brasas.com.',
+    '*** ESTE É UM E-MAIL AUTOMÁTICO - NÃO RESPONDA DIRETAMENTE ***',
+    'Em caso de dúvidas, entre em contato diretamente com o Departamento Pessoal em dp@brasas.com.',
     '',
     'Eu, ' + dados.nome + ', inscrito(a) no CPF sob o nº ' + cpfFormatado +
     ', ocupante do cargo de ' + dados.funcao +
@@ -325,9 +328,13 @@ function getAdminDataBySession() {
     return { ok: false, msg: 'Não foi possível identificar sua conta Google. Verifique se o Web App está configurado para exigir login com Google.' };
   }
 
-  var emailLimpo = email.toLowerCase().trim();
-  var ss         = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheetUser  = ss.getSheetByName('USUARIOS');
+  var emailLimpo  = email.toLowerCase().trim();
+  var ssUsuarios  = SpreadsheetApp.openById(USUARIOS_SPREADSHEET_ID);
+  var sheetUser   = null;
+  var sheetsUser  = ssUsuarios.getSheets();
+  for (var s = 0; s < sheetsUser.length; s++) {
+    if (sheetsUser[s].getSheetId() == USUARIOS_SHEET_GID) { sheetUser = sheetsUser[s]; break; }
+  }
   if (!sheetUser) return { ok: false, msg: 'Aba USUARIOS não encontrada na planilha.' };
 
   var userData  = sheetUser.getDataRange().getValues();
@@ -344,13 +351,14 @@ function getAdminDataBySession() {
 
     var valorAcesso = String(row[2] || '').toLowerCase().trim();
     ehAdmin = (valorAcesso === 'admin' || valorAcesso === 'dp');
-    if (ehAdmin) { nomeAdmin = String(row[0] || email); break; }
+    if (ehAdmin) { nomeAdmin = email; break; }
   }
 
   if (!ehAdmin) {
     return { ok: false, msg: 'Sua conta Google (' + email + ') não tem permissão de acesso ao painel DP.' };
   }
 
+  var ss        = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheetResp = ss.getSheetByName(NOME_ABA);
   if (!sheetResp || sheetResp.getLastRow() < 2) {
     return { ok: true, nomeAdmin: nomeAdmin, email: email, headers: [], rows: [], total: 0 };
@@ -418,9 +426,14 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
     '<div style="background:white;border:1px solid #d6def7;border-top:none;border-radius:0 0 16px 16px;padding:32px 28px;">' +
 
       // Aviso de e-mail automático
-      '<p style="font-size:11px;color:#5f6f94;text-align:center;margin-bottom:18px;">' +
-        'Este é um e-mail automático - não é necessário respondê-lo. Em caso de dúvidas, entre em contato com o Departamento Pessoal em dp@brasas.com.' +
-      '</p>' +
+      '<div style="background:#fff6df;border:1.5px solid #f0c060;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center;">' +
+        '<p style="font-size:12.5px;color:#9a6700;font-weight:bold;margin:0;">' +
+          '⚠️ ESTE É UM E-MAIL AUTOMÁTICO - NÃO RESPONDA DIRETAMENTE' +
+        '</p>' +
+        '<p style="font-size:11.5px;color:#9a6700;margin:6px 0 0;">' +
+          'Em caso de dúvidas, entre em contato diretamente com o Departamento Pessoal em <strong>dp@brasas.com</strong>.' +
+        '</p>' +
+      '</div>' +
 
       // Title
       '<h2 style="font-size:17px;color:#2f55cc;text-align:center;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:20px;">' +
