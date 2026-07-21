@@ -16,7 +16,8 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 | Planilha principal | `1BDiPjv0FqRJp5EwcvLdYXVvEAWesvwdEgbhYdnTlqPY` |
 | Aba de respostas | `Atualizações Cadastrais 2026` |
 | Aba de usuários admin | `USUARIOS` |
-| Pasta de documentos no Drive | `1k-15X2qEwOxrAXYY3u6TFFL3rRXZTNzk` |
+| Aba de funcionários | `RJ - UNIDADES` (`SHEET_GID = 566990656`) |
+| Pasta de documentos no Drive (Funcionários) | `1IuU9YLh4kiXg1p-xgNiZruUL9ddnD345` |
 | E-mail do DP | `dp@brasas.com` |
 
 ## Configuração de implantação (Web App)
@@ -26,7 +27,7 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 
 ## Fluxo do formulário
 
-1. **Passo 1** — Colaborador informa o CPF; o sistema busca nome e cargo na planilha de funcionários (coluna AT = CPF, coluna C = nome, coluna F = função, aba com `SHEET_GID = 566990656`).
+1. **Passo 1** — Colaborador informa o CPF; o sistema busca nome, cargo e unidade na planilha de funcionários (coluna AT = CPF, coluna C = nome, coluna F = função, coluna V = sigla da unidade, aba `RJ - UNIDADES` com `SHEET_GID = 566990656`). A sigla da unidade é convertida para o nome completo via `UNIDADES_MAP` em `Code.gs`.
 2. **Passo 2** — Preenchimento dos dados cadastrais.
 3. **Passo 3** — Tela de confirmação de envio.
 
@@ -39,8 +40,8 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 
 ### 1. Dados de Contato e Endereço
 - **CEP** (primeiro campo) — ao digitar 8 dígitos, busca automaticamente na API ViaCEP e preenche Endereço, Bairro, Cidade e Estado
-- Endereço Residencial (auto-preenchido pelo CEP, editável para adicionar o número)
-- Complemento, Bairro (auto-preenchido), CEP
+- Endereço Residencial (auto-preenchido pelo CEP)
+- **Número** (obrigatório, campo separado do Complemento), Complemento, Bairro (auto-preenchido)
 - Cidade (auto-preenchida), Estado (auto-preenchido)
 - Telefone celular, E-mail pessoal
 - **Comprovante de residência** (upload obrigatório, PDF/imagem, máx. 5 MB)
@@ -66,7 +67,7 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 Ao submeter o formulário:
 1. Os arquivos enviados são lidos como base64 no browser e transmitidos ao backend via `google.script.run`.
 2. O backend converte os blobs e:
-   - **Salva no Drive**: cria (ou reutiliza) uma subpasta com o nome completo do colaborador dentro da pasta de documentos, e salva cada arquivo com nome padronizado:
+   - **Salva no Drive**: dentro da pasta `PASTA_DOCUMENTOS_ID` (pasta "Funcionários"), cria (ou reutiliza) primeiro a subpasta da **unidade** do colaborador (nome completo em MAIÚSCULO, via `UNIDADES_MAP`) e, dentro dela, a subpasta do **colaborador** (nome completo em MAIÚSCULO) — criadas/reutilizadas pela função `_salvarDocumentosNoDrive(nomeFunc, unidade, blobs)`. Cada arquivo é salvo com nome padronizado:
      - `Alteracao_Nome_NOME.ext`
      - `Doc_Estado_Civil_NOME.ext`
      - `Comprovante_Residencia_NOME.ext`
@@ -74,21 +75,25 @@ Ao submeter o formulário:
      - `Comprovante_Escolaridade_NOME_1.ext`, `_2.ext`, etc. (múltiplos)
    - **Envia por e-mail**: os documentos vão como anexo no e-mail de declaração cadastral, enviado para `dp@brasas.com` e para o e-mail pessoal do colaborador.
 
-Todos os arquivos são salvos no Drive da conta que fez o deploy do Web App (executa como "Eu — proprietário"), dentro da pasta `PASTA_DOCUMENTOS_ID`, em uma subpasta por colaborador (criada/reutilizada pelo nome completo).
+Todos os arquivos são salvos no Drive da conta que fez o deploy do Web App (executa como "Eu — proprietário"), dentro da pasta `PASTA_DOCUMENTOS_ID` → pasta da unidade → subpasta do colaborador.
+
+### Padronização em maiúsculo
+
+Os dados de texto preenchidos no formulário (nome, cargo, endereço, número, complemento, bairro, cidade, estado civil, escolaridade, etc.) são gravados **em maiúsculo** na planilha de respostas (função `_upper()` em `Code.gs`), assim como os nomes das pastas criadas no Drive (unidade e colaborador). O **e-mail pessoal** é uma exceção e é mantido exatamente como digitado. O corpo do e-mail de declaração enviado ao DP/colaborador **não** é afetado — mantém os dados como preenchidos originalmente.
 
 ## Painel Admin
 
 Acessado pelo botão **"Acesso DP"** no cabeçalho. Autenticação via conta Google (`Session.getActiveUser().getEmail()`) — sem necessidade de senha.
 
-- A função `getAdminDataBySession()` no `Code.gs` verifica se o e-mail da sessão Google existe na aba `USUARIOS` e se alguma célula da linha contém `admin`.
-- **Formato da aba USUARIOS:** coluna A = nome, alguma coluna contendo o e-mail corporativo, alguma célula da linha contendo `admin`.
+- A função `getAdminDataBySession()` no `Code.gs` verifica se o e-mail da sessão Google existe na aba `USUARIOS` e se a **coluna C** dessa linha contém `admin` ou `dp` (não sensível a maiúsculas/minúsculas).
+- **Formato da aba USUARIOS:** coluna A = nome, alguma coluna contendo o e-mail corporativo, coluna C = `admin` ou `dp` para liberar acesso ao painel.
 - Sem senha — a autenticação Google já garante a identidade.
 
-Funcionalidades: resumo (total, alterações de dependentes, respostas hoje), tabela filtrável por nome/CPF/estado civil/dependentes, download CSV.
+Funcionalidades: resumo (total, alterações de dependentes, respostas hoje), tabela com coluna Unidade, filtrável por nome/CPF/unidade/estado civil/dependentes (filtro de unidade populado dinamicamente a partir dos dados existentes), download CSV.
 
 ## Colunas da planilha de respostas
 
-`Data/Hora` · `Nome` · `CPF` · `Cargo` · `Endereço` · `Complemento` · `Bairro` · `CEP` · `Cidade` · `Estado` · `Telefone` · `E-mail Pessoal` · `Estado Civil` · `Alteração Dependentes` · `Escolaridade` · `Doc. Dependente` · `Qtd. Dependentes` · `Alteração de Nome` · `Nome Atualizado` · `Doc. Alt. Nome` · `Comprovante Residência` · `Doc. Escolaridade` · `Doc. Estado Civil`
+`Data/Hora` · `Nome` · `CPF` · `Cargo` · `Endereço` · `Complemento` · `Bairro` · `CEP` · `Cidade` · `Estado` · `Telefone` · `E-mail Pessoal` · `Estado Civil` · `Alteração Dependentes` · `Escolaridade` · `Doc. Dependente` · `Qtd. Dependentes` · `Alteração de Nome` · `Nome Atualizado` · `Doc. Alt. Nome` · `Comprovante Residência` · `Doc. Escolaridade` · `Doc. Estado Civil` · `Número` · `Unidade`
 
 As colunas novas são adicionadas automaticamente ao cabeçalho se a aba já existir com o formato anterior.
 
@@ -104,10 +109,11 @@ As colunas novas são adicionadas automaticamente ao cabeçalho se a aba já exi
 
 ```javascript
 SPREADSHEET_ID      // ID da planilha Google Sheets
-SHEET_GID           // GID da aba de funcionários
+SHEET_GID           // GID da aba de funcionários (RJ - UNIDADES)
 EMAIL_DP            // dp@brasas.com
 NOME_ABA            // Nome da aba de respostas
-PASTA_DOCUMENTOS_ID // ID da pasta no Drive para documentos
+PASTA_DOCUMENTOS_ID // ID da pasta no Drive "Funcionários"
+UNIDADES_MAP        // Mapa sigla da unidade (coluna V) → nome completo da pasta
 ```
 
 ## Funções principais (Code.gs)
@@ -115,10 +121,11 @@ PASTA_DOCUMENTOS_ID // ID da pasta no Drive para documentos
 | Função | Descrição |
 |---|---|
 | `doGet()` | Entry point — serve o Index.html |
-| `buscarFuncionarioPorCPF(cpf)` | Busca nome e função pelo CPF na planilha de funcionários |
+| `buscarFuncionarioPorCPF(cpf)` | Busca nome, função e unidade pelo CPF na planilha de funcionários |
 | `enviarDeclaracao(dados)` | Salva resposta, envia e-mail com anexos, salva no Drive |
-| `salvarResposta(dados, cpf, data)` | Grava linha na aba de respostas |
+| `salvarResposta(dados, cpf, data)` | Grava linha na aba de respostas (dados de texto em maiúsculo) |
 | `getAdminDataBySession()` | Autentica via Google e retorna dados para o painel admin |
 | `criarEmailHtml(...)` | Gera corpo HTML do e-mail de declaração |
 | `criarEmailTexto(...)` | Gera corpo texto plain do e-mail |
-| `_salvarDocumentosNoDrive(nome, blobs)` | Salva arquivos na subpasta do colaborador no Drive |
+| `_salvarDocumentosNoDrive(nomeFunc, unidade, blobs)` | Salva arquivos na subpasta unidade → colaborador no Drive |
+| `_upper(v)` | Normaliza texto para maiúsculo (usado na planilha e nomes de pasta) |

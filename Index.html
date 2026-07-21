@@ -452,10 +452,14 @@
         </div>
         <div class="field">
           <label for="fEndereco">Endereço Residencial <span class="required">*</span></label>
-          <input type="text" id="fEndereco" placeholder="Rua / Av., número...">
-          <div class="help">Preenchido automaticamente pelo CEP — adicione o número</div>
+          <input type="text" id="fEndereco" placeholder="Rua / Av...">
+          <div class="help">Preenchido automaticamente pelo CEP</div>
         </div>
-        <div class="grid-2">
+        <div class="grid-3">
+          <div class="field">
+            <label for="fNumero">Número <span class="required">*</span></label>
+            <input type="text" id="fNumero" placeholder="Nº">
+          </div>
           <div class="field">
             <label for="fComplemento">Complemento</label>
             <input type="text" id="fComplemento" placeholder="Apto, Casa, Bloco...">
@@ -616,11 +620,8 @@
         <div class="success-icon">✅</div>
         <h2>Declaração Enviada com Sucesso!</h2>
         <p>
-          Sua atualização cadastral foi registrada e a declaração foi encaminhada ao
-          <strong>Departamento Pessoal</strong>. Uma cópia também foi enviada para o seu e-mail pessoal.
-        </p>
-        <p style="margin-top:18px;font-size:13px;">
-          Os documentos anexados foram encaminhados automaticamente ao Departamento Pessoal e uma cópia para o seu e-mail pessoal.
+          Uma cópia da sua declaração foi enviada para o seu e-mail pessoal, e o
+          <strong>Departamento Pessoal</strong> já recebeu as informações enviadas.
         </p>
       </div>
     </div>
@@ -656,6 +657,9 @@
 
         <div class="filtros-row">
           <input type="text" id="admBusca" placeholder="Buscar por nome ou CPF..." oninput="renderTabelaAdmin()">
+          <select id="admFiltroUnidade" onchange="renderTabelaAdmin()">
+            <option value="">Todas as unidades</option>
+          </select>
           <select id="admFiltroEstCivil" onchange="renderTabelaAdmin()">
             <option value="">Todos os estados civis</option>
             <option>Solteiro(a)</option>
@@ -682,7 +686,9 @@
                 <th>Nome</th>
                 <th>CPF</th>
                 <th>Cargo</th>
+                <th>Unidade</th>
                 <th>Endereço</th>
+                <th>Nº</th>
                 <th>Compl.</th>
                 <th>Bairro</th>
                 <th>CEP</th>
@@ -696,7 +702,7 @@
               </tr>
             </thead>
             <tbody id="admTabelaBody">
-              <tr><td colspan="16" style="text-align:center;padding:30px;color:var(--text-soft);">Carregando...</td></tr>
+              <tr><td colspan="18" style="text-align:center;padding:30px;color:var(--text-soft);">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -710,7 +716,7 @@
 
 <script>
   /* ══ Estado global ══════════════════════════════════════════════════════════ */
-  var dadosFuncionario         = { cpf: '', nome: '', funcao: '' };
+  var dadosFuncionario         = { cpf: '', nome: '', funcao: '', unidade: '' };
   var estadoCivilSelecionado   = '';
   var dependentesSelecionado   = '';
   var alteracaoNomeSelecionado = '';
@@ -782,9 +788,10 @@
       .withSuccessHandler(function(res) {
         ocultarLoading();
         if (!res.ok) { showToast(res.msg, 'error'); return; }
-        dadosFuncionario.cpf    = document.getElementById('inputCPF').value;
-        dadosFuncionario.nome   = res.nome;
-        dadosFuncionario.funcao = res.funcao;
+        dadosFuncionario.cpf     = document.getElementById('inputCPF').value;
+        dadosFuncionario.nome    = res.nome;
+        dadosFuncionario.funcao  = res.funcao;
+        dadosFuncionario.unidade = res.unidade;
         document.getElementById('showCPF').value    = dadosFuncionario.cpf;
         document.getElementById('showNome').value   = dadosFuncionario.nome;
         document.getElementById('showFuncao').value = dadosFuncionario.funcao;
@@ -919,6 +926,7 @@
 
   function submeterForm() {
     var endereco     = document.getElementById('fEndereco').value.trim();
+    var numero       = document.getElementById('fNumero').value.trim();
     var complemento  = document.getElementById('fComplemento').value.trim();
     var bairro       = document.getElementById('fBairro').value.trim();
     var cep          = document.getElementById('fCEP').value.trim();
@@ -934,6 +942,7 @@
       if (!document.getElementById('fDocNome').files[0]) { showToast('Anexe o documento comprobatório da alteração de nome.', 'error'); return; }
     }
     if (!endereco)     { showToast('Informe o endereço residencial.', 'error'); return; }
+    if (!numero)       { showToast('Informe o número do endereço.', 'error'); return; }
     if (!bairro)       { showToast('Informe o bairro.', 'error'); return; }
     if (!cep)          { showToast('Informe o CEP.', 'error'); return; }
     if (!cidade)       { showToast('Informe a cidade.', 'error'); return; }
@@ -1004,7 +1013,8 @@
                 .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
                 .enviarDeclaracao({
                   cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
-                  endereco: endereco, complemento: complemento, bairro: bairro, cep: cep,
+                  unidade: dadosFuncionario.unidade,
+                  endereco: endereco, numero: numero, complemento: complemento, bairro: bairro, cep: cep,
                   cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
                   estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
                   qtdDependentes: qtdDependentes,
@@ -1058,6 +1068,7 @@
         if (!res.ok) { showToast(res.msg, 'error'); return; }
         admDados = { headers: res.headers, rows: res.rows };
         atualizarDashAdmin();
+        popularFiltroUnidade();
         renderTabelaAdmin();
         showToast('Dados atualizados.', 'success');
       })
@@ -1090,8 +1101,26 @@
     document.getElementById('btnAdminHero').textContent = 'Sair';
     document.getElementById('btnAdminHero').onclick = sairAdmin;
     atualizarDashAdmin();
+    popularFiltroUnidade();
     renderTabelaAdmin();
     window.scrollTo(0, 0);
+  }
+
+  function popularFiltroUnidade() {
+    var unidIdx = admDados.headers.indexOf('Unidade');
+    var select  = document.getElementById('admFiltroUnidade');
+    var atual   = select.value;
+    if (unidIdx < 0) return;
+
+    var unidades = [];
+    admDados.rows.forEach(function(r) {
+      var u = String(r[unidIdx] || '').trim();
+      if (u && unidades.indexOf(u) < 0) unidades.push(u);
+    });
+    unidades.sort();
+
+    select.innerHTML = '<option value="">Todas as unidades</option>' +
+      unidades.map(function(u) { return '<option' + (u === atual ? ' selected' : '') + '>' + esc(u) + '</option>'; }).join('');
   }
 
   function atualizarDashAdmin() {
@@ -1119,6 +1148,7 @@
 
   function renderTabelaAdmin() {
     var busca   = document.getElementById('admBusca').value.toLowerCase().trim();
+    var filtroUnidade = document.getElementById('admFiltroUnidade').value;
     var estCivil = document.getElementById('admFiltroEstCivil').value;
     var filtroDep = document.getElementById('admFiltroDep').value;
 
@@ -1128,7 +1158,9 @@
     var nomeIdx  = headers.indexOf('Nome');
     var cpfIdx   = headers.indexOf('CPF');
     var cargoIdx = headers.indexOf('Cargo');
+    var unidIdx  = headers.indexOf('Unidade');
     var endIdx   = headers.indexOf('Endereço');
+    var numIdx   = headers.indexOf('Número');
     var cplIdx   = headers.indexOf('Complemento');
     var bairIdx  = headers.indexOf('Bairro');
     var cepIdx   = headers.indexOf('CEP');
@@ -1144,7 +1176,7 @@
     var tbody = document.getElementById('admTabelaBody');
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:36px;color:var(--text-soft);">Nenhuma resposta cadastrada ainda.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;padding:36px;color:var(--text-soft);">Nenhuma resposta cadastrada ainda.</td></tr>';
       document.getElementById('admTabelaInfo').textContent = '';
       return;
     }
@@ -1153,13 +1185,14 @@
       var nome = nomeIdx >= 0 ? String(r[nomeIdx]).toLowerCase() : '';
       var cpf  = cpfIdx  >= 0 ? String(r[cpfIdx]).toLowerCase()  : '';
       if (busca    && nome.indexOf(busca) < 0 && cpf.indexOf(busca) < 0) return false;
+      if (filtroUnidade && unidIdx >= 0 && r[unidIdx] !== filtroUnidade) return false;
       if (estCivil && ecIdx >= 0 && r[ecIdx] !== estCivil) return false;
       if (filtroDep && depIdx >= 0 && r[depIdx] !== filtroDep) return false;
       return true;
     });
 
     if (!filtradas.length) {
-      tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:36px;color:var(--text-soft);">Nenhum resultado para os filtros selecionados.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;padding:36px;color:var(--text-soft);">Nenhum resultado para os filtros selecionados.</td></tr>';
       document.getElementById('admTabelaInfo').textContent = '';
       return;
     }
@@ -1177,7 +1210,9 @@
         '<td style="font-weight:bold;">' + cel(r, nomeIdx)  + '</td>' +
         '<td>' + cel(r, cpfIdx)  + '</td>' +
         '<td style="color:var(--text-soft);">' + cel(r, cargoIdx) + '</td>' +
+        '<td>' + cel(r, unidIdx) + '</td>' +
         '<td>' + cel(r, endIdx)  + '</td>' +
+        '<td>' + cel(r, numIdx)  + '</td>' +
         '<td style="color:var(--text-soft);">' + cel(r, cplIdx)  + '</td>' +
         '<td>' + cel(r, bairIdx) + '</td>' +
         '<td>' + cel(r, cepIdx)  + '</td>' +

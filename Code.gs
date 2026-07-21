@@ -2,7 +2,42 @@ var SPREADSHEET_ID       = '1BDiPjv0FqRJp5EwcvLdYXVvEAWesvwdEgbhYdnTlqPY';
 var SHEET_GID            = 566990656;
 var EMAIL_DP             = 'dp@brasas.com';
 var NOME_ABA             = 'Atualizações Cadastrais 2026';
-var PASTA_DOCUMENTOS_ID  = '1k-15X2qEwOxrAXYY3u6TFFL3rRXZTNzk';
+var PASTA_DOCUMENTOS_ID  = '1IuU9YLh4kiXg1p-xgNiZruUL9ddnD345';
+
+// Sigla da unidade (coluna V da aba de funcionários) → nome completo da pasta no Drive
+var UNIDADES_MAP = {
+  'BF': 'Botafogo',
+  'CG': 'Campo Grande',
+  'NS': 'Cachambi',
+  'CP': 'Copacabana',
+  'CX': 'Caxias',
+  'DT': 'Downtown',
+  'FG': 'Freguesia',
+  'IG': 'Ilha do Governador',
+  'IP': 'Ipanema',
+  'IT': 'Itaipu',
+  'MRI': 'Méier',
+  'NI': 'Nova Iguaçu',
+  'NL': 'Novo Leblon',
+  'NT': 'Niterói',
+  'PO': 'Parque Olímpico',
+  'RC': 'Recreio',
+  'TJ': 'Tijuca',
+  'TQ': 'Taquara',
+  'VP': 'Vila da Penha',
+  'VQ': 'Vila Valqueire',
+  'BG': 'Bangu',
+  'ONLINE': 'ONLINE',
+  'LJ': 'Laranjeiras',
+  'PC': 'Pechincha',
+  'PN': 'Península',
+  'GR': 'Grajaú',
+  'VO': 'Vila Olímpia',
+  'BOD': 'BRASAS ON DEMAND',
+  'EC NEW': 'EC NEW',
+  'MÉTODOS': 'MÉTODOS',
+  'EDITORA': 'EDITORA'
+};
 
 // ── Entry point ──────────────────────────────────────────────────────────────
 
@@ -32,16 +67,18 @@ function buscarFuncionarioPorCPF(cpf) {
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return { ok: false, msg: 'Sem dados na planilha.' };
 
-  // Colunas: C = índice 2 (nome), F = índice 5 (função), AT = índice 45 (CPF)
+  // Colunas: C = índice 2 (nome), F = índice 5 (função), V = índice 21 (sigla da unidade), AT = índice 45 (CPF)
   var data = sheet.getRange(2, 1, lastRow - 1, 46).getValues();
 
   for (var r = 0; r < data.length; r++) {
     var cpfCelula = String(data[r][45]).replace(/\D/g, '');
     if (cpfCelula === cpfLimpo) {
-      var nome   = String(data[r][2] || '').trim();
-      var funcao = String(data[r][5] || '').trim();
+      var nome     = String(data[r][2] || '').trim();
+      var funcao   = String(data[r][5] || '').trim();
+      var siglaUn  = String(data[r][21] || '').trim().toUpperCase();
+      var unidade  = UNIDADES_MAP[siglaUn] || siglaUn;
       if (!nome) return { ok: false, msg: 'CPF encontrado, mas sem nome cadastrado. Entre em contato com o RH.' };
-      return { ok: true, nome: nome, funcao: funcao };
+      return { ok: true, nome: nome, funcao: funcao, unidade: unidade };
     }
   }
 
@@ -61,14 +98,9 @@ function enviarDeclaracao(dados) {
 
   try { salvarResposta(dados, cpfFormatado, hoje); } catch(e) { Logger.log('Erro ao salvar: ' + e.message); }
 
-  var assunto    = 'Atualização Cadastral 2026 — ' + dados.nome;
+  var assunto    = 'Atualização Cadastral 2026 - ' + dados.nome;
   var corpoTexto = criarEmailTexto(dados, cpfFormatado, dataFormatada);
   var corpoHtml  = criarEmailHtml(dados, cpfFormatado, dataFormatada);
-
-  var destinatarios = [EMAIL_DP];
-  if (dados.emailPessoal && dados.emailPessoal.indexOf('@') > 0 && dados.emailPessoal !== EMAIL_DP) {
-    destinatarios.push(dados.emailPessoal);
-  }
 
   var attachments = [];
   var nomeBase    = dados.nome.replace(/\s+/g, '_');
@@ -127,12 +159,12 @@ function enviarDeclaracao(dados) {
     });
   }
 
-  _salvarDocumentosNoDrive(dados.nome, attachments);
+  _salvarDocumentosNoDrive(dados.nome, dados.unidade, attachments);
 
   try {
-    var opts = { htmlBody: corpoHtml, name: 'BRASAS — Departamento Pessoal' };
+    var opts = { htmlBody: corpoHtml, name: 'BRASAS - Departamento Pessoal', replyTo: EMAIL_DP };
     if (attachments.length > 0) opts.attachments = attachments;
-    GmailApp.sendEmail(destinatarios.join(','), assunto, corpoTexto, opts);
+    GmailApp.sendEmail(dados.emailPessoal, assunto, corpoTexto, opts);
     return { ok: true };
   } catch(e) {
     return { ok: false, msg: e.message };
@@ -145,7 +177,7 @@ function salvarResposta(dados, cpfFormatado, data) {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName(NOME_ABA);
 
-  var NOVOS_HEADERS = ['Doc. Dependente', 'Qtd. Dependentes', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência', 'Doc. Escolaridade', 'Doc. Estado Civil'];
+  var NOVOS_HEADERS = ['Doc. Dependente', 'Qtd. Dependentes', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência', 'Doc. Escolaridade', 'Doc. Estado Civil', 'Número', 'Unidade'];
 
   if (!sheet) {
     sheet = ss.insertSheet(NOME_ABA);
@@ -171,18 +203,20 @@ function salvarResposta(dados, cpfFormatado, data) {
 
   sheet.appendRow([
     Utilities.formatDate(data, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'),
-    dados.nome, cpfFormatado, dados.funcao,
-    dados.endereco, dados.complemento || '', dados.bairro, dados.cep,
-    dados.cidade, dados.estado, dados.telefone, dados.emailPessoal,
-    dados.estadoCivil, dados.alteracaoDependentes, dados.escolaridade,
+    _upper(dados.nome), cpfFormatado, _upper(dados.funcao),
+    _upper(dados.endereco), _upper(dados.complemento), _upper(dados.bairro), dados.cep,
+    _upper(dados.cidade), dados.estado, dados.telefone, dados.emailPessoal,
+    _upper(dados.estadoCivil), _upper(dados.alteracaoDependentes), _upper(dados.escolaridade),
     (dados.docsDependente && dados.docsDependente.length > 0) ? 'Sim (' + dados.docsDependente.length + ')' : 'Não',
-    dados.qtdDependentes  || '',
-    dados.alteracaoNome   || 'Não',
-    dados.nomeAtualizado  || '',
+    _upper(dados.qtdDependentes),
+    _upper(dados.alteracaoNome || 'Não'),
+    _upper(dados.nomeAtualizado),
     dados.docNome         ? 'Sim' : 'Não',
     dados.comprovanteRes  ? 'Sim' : 'Não',
     (dados.docsEscolaridade && dados.docsEscolaridade.length > 0) ? 'Sim (' + dados.docsEscolaridade.length + ')' : 'Não',
-    dados.docEstadoCivil  ? 'Sim' : 'Não'
+    dados.docEstadoCivil  ? 'Sim' : 'Não',
+    _upper(dados.numero),
+    _upper(dados.unidade)
   ]);
 }
 
@@ -190,12 +224,14 @@ function salvarResposta(dados, cpfFormatado, data) {
 
 function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
   var linhas = [
-    'DECLARAÇÃO DE ATUALIZAÇÃO CADASTRAL – ANO 2026',
+    'ATUALIZAÇÃO CADASTRAL - ANO 2026',
+    '',
+    'Este é um e-mail automático - não é necessário respondê-lo. Em caso de dúvidas, entre em contato com o Departamento Pessoal em dp@brasas.com.',
     '',
     'Eu, ' + dados.nome + ', inscrito(a) no CPF sob o nº ' + cpfFormatado +
     ', ocupante do cargo de ' + dados.funcao +
-    ', declaro para os devidos fins de atualização de meu registro funcional e ' +
-    'cumprimento das obrigações junto ao eSocial, que meus dados seguem conforme abaixo:',
+    ', declaro para os devidos fins de atualização de meu registro funcional, ' +
+    'que meus dados seguem conforme abaixo:',
     ''
   ];
 
@@ -210,7 +246,7 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
 
   linhas = linhas.concat([
     '1. Dados de Contato e Endereço',
-    'Endereço Residencial: ' + dados.endereco,
+    'Endereço Residencial: ' + dados.endereco + '   Número: ' + (dados.numero || '—'),
     'Complemento: ' + (dados.complemento || '—') + '   Bairro: ' + dados.bairro + '   CEP: ' + dados.cep,
     'Cidade: ' + dados.cidade + '   Estado: ' + dados.estado,
     'Telefone Celular/WhatsApp: ' + dados.telefone,
@@ -242,11 +278,7 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
     'qualquer alteração que venha a ocorrer em meus dados cadastrais ' +
     '(mudança de endereço, estado civil, nascimento de filhos, conclusão de cursos, etc.).',
     '',
-    dados.cidade + ' - ' + dados.estado + ', ' + dataFormatada + '.',
-    '',
-    'Assinatura do Colaborador',
-    '_________________________________',
-    dados.nome
+    dados.cidade + ' - ' + dados.estado + ', ' + dataFormatada + '.'
   ]);
 
   return linhas.join('\n');
@@ -260,16 +292,27 @@ function _ext(filename) {
   return i >= 0 ? filename.slice(i).toLowerCase() : '';
 }
 
-function _salvarDocumentosNoDrive(nomeFunc, blobs) {
+function _salvarDocumentosNoDrive(nomeFunc, unidade, blobs) {
   if (!blobs || blobs.length === 0) return;
   try {
     var pastaRaiz = DriveApp.getFolderById(PASTA_DOCUMENTOS_ID);
-    var iterador  = pastaRaiz.getFoldersByName(nomeFunc);
-    var subPasta  = iterador.hasNext() ? iterador.next() : pastaRaiz.createFolder(nomeFunc);
+
+    var nomeUnidadePasta = (unidade || 'SEM UNIDADE').toUpperCase();
+    var iterUnidade  = pastaRaiz.getFoldersByName(nomeUnidadePasta);
+    var pastaUnidade = iterUnidade.hasNext() ? iterUnidade.next() : pastaRaiz.createFolder(nomeUnidadePasta);
+
+    var nomeFuncPasta = (nomeFunc || '').toUpperCase();
+    var iterFunc  = pastaUnidade.getFoldersByName(nomeFuncPasta);
+    var subPasta  = iterFunc.hasNext() ? iterFunc.next() : pastaUnidade.createFolder(nomeFuncPasta);
+
     blobs.forEach(function(blob) { subPasta.createFile(blob); });
   } catch(e) {
     Logger.log('Erro ao salvar no Drive: ' + e);
   }
+}
+
+function _upper(v) {
+  return String(v || '').toUpperCase();
 }
 
 // ── Painel Admin ─────────────────────────────────────────────────────────────
@@ -299,9 +342,8 @@ function getAdminDataBySession() {
     }
     if (!temEmail) continue;
 
-    for (var k = 0; k < row.length; k++) {
-      if (String(row[k]).toLowerCase().trim() === 'admin') { ehAdmin = true; break; }
-    }
+    var valorAcesso = String(row[2] || '').toLowerCase().trim();
+    ehAdmin = (valorAcesso === 'admin' || valorAcesso === 'dp');
     if (ehAdmin) { nomeAdmin = String(row[0] || email); break; }
   }
 
@@ -369,22 +411,27 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
     // Header
     '<div style="background:linear-gradient(135deg,#4169e1,#2f55cc);border-radius:16px 16px 0 0;padding:24px 28px;color:white;">' +
       '<div style="font-size:22px;font-weight:300;letter-spacing:0.2px;">BRASAS English Course</div>' +
-      '<div style="font-size:13px;opacity:0.88;margin-top:4px;">Departamento Pessoal — Atualização Cadastral 2026</div>' +
+      '<div style="font-size:13px;opacity:0.88;margin-top:4px;">Departamento Pessoal - Atualização Cadastral 2026</div>' +
     '</div>' +
 
     // Body
     '<div style="background:white;border:1px solid #d6def7;border-top:none;border-radius:0 0 16px 16px;padding:32px 28px;">' +
 
+      // Aviso de e-mail automático
+      '<p style="font-size:11px;color:#5f6f94;text-align:center;margin-bottom:18px;">' +
+        'Este é um e-mail automático - não é necessário respondê-lo. Em caso de dúvidas, entre em contato com o Departamento Pessoal em dp@brasas.com.' +
+      '</p>' +
+
       // Title
       '<h2 style="font-size:17px;color:#2f55cc;text-align:center;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:20px;">' +
-        'Declaração de Atualização Cadastral – Ano 2026' +
+        'Atualização Cadastral - Ano 2026' +
       '</h2>' +
 
       // Opening paragraph
       '<p style="font-size:13px;color:#1f2a44;line-height:1.8;margin-bottom:24px;">' +
         'Eu, <strong>' + dados.nome + '</strong>, inscrito(a) no CPF sob o nº <strong>' + cpfFormatado + '</strong>, ' +
         'ocupante do cargo de <strong>' + dados.funcao + '</strong>, declaro para os devidos fins de atualização de meu ' +
-        'registro funcional e cumprimento das obrigações junto ao eSocial, que meus dados seguem conforme abaixo:' +
+        'registro funcional, que meus dados seguem conforme abaixo:' +
       '</p>' +
 
       // Alteração de nome (condicional)
@@ -395,6 +442,7 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
         '<div style="font-size:14px;font-weight:bold;color:#2f55cc;margin-bottom:12px;">1. Dados de Contato e Endereço</div>' +
         '<table style="width:100%;border-collapse:collapse;">' +
           campo('Endereço Residencial:', dados.endereco) +
+          campo('Número:', dados.numero || '—') +
           campo('Complemento:', dados.complemento || '—') +
           campo('Bairro:', dados.bairro) +
           campo('CEP:', dados.cep) +
@@ -441,22 +489,18 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
         '</p>' +
       '</div>' +
 
-      // Signature
+      // Data e local
       '<div style="text-align:right;margin-bottom:24px;">' +
-        '<p style="font-size:13px;color:#1f2a44;margin-bottom:20px;">' +
+        '<p style="font-size:13px;color:#1f2a44;">' +
           dados.cidade + ' - ' + dados.estado + ', ' + dataFormatada + '.' +
         '</p>' +
-        '<p style="font-size:13px;color:#5f6f94;">Assinatura do Colaborador</p>' +
-        '<div style="border-top:1.5px solid #1f2a44;width:260px;margin:8px 0 6px auto;"></div>' +
-        '<p style="font-size:13px;font-weight:bold;color:#1f2a44;">' + dados.nome + '</p>' +
-        '<p style="font-size:12px;color:#5f6f94;">' + cpfFormatado + '</p>' +
       '</div>' +
 
     '</div>' +
 
     // Footer
     '<div style="text-align:center;margin-top:16px;font-size:11px;color:#9db4ff;">' +
-      'BRASAS English Course — Departamento Pessoal — dp@brasas.com' +
+      'BRASAS English Course - Departamento Pessoal - dp@brasas.com' +
     '</div>' +
 
   '</div>' +
