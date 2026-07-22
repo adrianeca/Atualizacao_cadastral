@@ -287,6 +287,31 @@
     .badge-dep-sim { background: #fff6df; color: #9a6700; font-weight: bold; padding: 3px 8px; border-radius: 8px; font-size: 11px; }
     .badge-dep-nao { background: #eaf7f0; color: #1f7a4d; font-weight: bold; padding: 3px 8px; border-radius: 8px; font-size: 11px; }
 
+    /* ── Bloco informativo dependentes ── */
+    .dep-info-accordion { margin-bottom: 16px; border: 1.5px solid var(--royal-blue-border); border-radius: var(--radius-md); overflow: hidden; }
+    .dep-info-toggle {
+      width: 100%; background: var(--royal-blue-light); border: none; padding: 12px 16px;
+      text-align: left; font-size: 13px; color: var(--royal-blue-dark); font-weight: bold;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+    }
+    .dep-info-toggle:hover { background: #dce8ff; }
+    .dep-info-body { padding: 16px; background: white; }
+    .dep-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .dep-tab {
+      border: 1.5px solid var(--royal-blue-border); background: white; color: var(--royal-blue-dark);
+      border-radius: 8px; padding: 6px 18px; font-size: 12.5px; cursor: pointer; font-weight: bold;
+    }
+    .dep-tab.active { background: var(--royal-blue); color: white; border-color: var(--royal-blue); }
+    .dep-tab-panel ul { margin: 6px 0 12px 18px; }
+    .dep-tab-panel li { font-size: 13px; color: var(--text-main); margin-bottom: 4px; line-height: 1.5; }
+    .dep-tab-panel > strong { font-size: 13px; color: var(--royal-blue-dark); display: block; margin-top: 10px; }
+    .dep-tab-panel > strong:first-child { margin-top: 0; }
+    .dep-tab-panel li strong { display: inline; font-size: inherit; color: inherit; }
+    .dep-irrf-note {
+      background: #fff6df; border: 1px solid #f0c060; border-radius: 8px;
+      padding: 10px 14px; font-size: 12.5px; color: #9a6700; margin-top: 12px; line-height: 1.6;
+    }
+
     /* ── Loading ── */
     .loading-overlay {
       position: fixed; inset: 0; z-index: 8888;
@@ -538,6 +563,58 @@
           </div>
         </div>
 
+        <!-- Bloco informativo dependentes -->
+        <div class="dep-info-accordion">
+          <button type="button" class="dep-info-toggle" onclick="toggleDepInfo(this)">
+            ℹ️ Saiba quem deve ser informado como dependente <span class="dep-arrow">▼</span>
+          </button>
+          <div class="dep-info-body" style="display:none;">
+            <div class="dep-tabs">
+              <button type="button" class="dep-tab active" onclick="mudarAbaDepInfo(this,'sf')">Salário Família</button>
+              <button type="button" class="dep-tab" onclick="mudarAbaDepInfo(this,'irrf')">Imposto de Renda Retido na Fonte (IRRF)</button>
+            </div>
+
+            <div id="depInfoSF" class="dep-tab-panel">
+              <strong>Quem tem direito?</strong>
+              <ul>
+                <li>Filhos (ou equiparados) até <strong>14 anos</strong> de idade</li>
+                <li>Filhos com deficiência de <strong>qualquer idade</strong> (mediante perícia médica do INSS)</li>
+              </ul>
+              <strong>⚠️ Atenção</strong>
+              <ul>
+                <li>Válido apenas para trabalhadores com remuneração bruta mensal até o limite estabelecido pelo INSS no ano vigente.</li>
+              </ul>
+              <strong>Documentos necessários</strong>
+              <ul>
+                <li>Certidão de Nascimento do dependente</li>
+                <li>Carteira de Vacinação atualizada (dependentes até 6 anos)</li>
+                <li>Comprovante de Frequência Escolar (dependentes de 7 a 14 anos)</li>
+              </ul>
+            </div>
+
+            <div id="depInfoIRRF" class="dep-tab-panel" style="display:none;">
+              <strong>Quem pode ser dependente?</strong>
+              <ul>
+                <li>Filhos ou enteados até <strong>21 anos</strong> (ou até <strong>24 anos</strong> se cursando faculdade ou escola técnica)</li>
+                <li>Filhos com incapacidade física ou mental, de qualquer idade</li>
+                <li>Cônjuge ou companheiro(a) com quem viva há mais de 5 anos ou tenha filho em comum</li>
+                <li>Pais, avós e bisavós com rendimentos abaixo do limite da Receita Federal</li>
+              </ul>
+              <strong>Documentos necessários</strong>
+              <ul>
+                <li>CPF do dependente (qualquer idade)</li>
+                <li>Certidão de Nascimento ou RG (filhos/enteados)</li>
+                <li>Certidão de casamento ou declaração de união estável (cônjuge/companheiro)</li>
+                <li>Termo de guarda judicial (tutelados/curatelados)</li>
+              </ul>
+              <div class="dep-irrf-note">
+                📋 Para incluir dependentes no IRRF, solicite o <strong>formulário de Declaração de Dependentes</strong> diretamente ao DP em <strong>dp@brasas.com</strong> e envie preenchido com os documentos acima.
+              </div>
+            </div>
+          </div>
+        </div>
+
+
         <div class="field">
           <label>Houve alteração no número de dependentes este ano? <span class="required">*</span></label>
           <div class="toggle-group">
@@ -560,7 +637,7 @@
             <label>Documentos dos Dependentes</label>
             <div id="containerDocsDependente"></div>
             <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="adicionarDocDep()">+ Adicionar documento</button>
-            <div class="help" style="margin-top:8px;">Certidão de Nascimento ou RG e CPF do dependente (PDF ou imagem, máx. 5 MB cada). Os documentos serão enviados automaticamente para o seu e-mail e para o DP.</div>
+            <div class="help" style="margin-top:8px;">Envie os documentos conforme o tipo de dependente (ver "Saiba quem deve ser informado como dependente" acima). PDF ou imagem, máx. 5 MB cada.</div>
           </div>
         </div>
       </div>
@@ -812,6 +889,20 @@
     var radio = labelEl.querySelector('input[type="radio"]');
     if (radio) radio.checked = true;
     document.getElementById('secaoDocEstadoCivil').style.display = valor !== 'Solteiro(a)' ? 'block' : 'none';
+  }
+
+  function toggleDepInfo(btn) {
+    var body = btn.nextElementSibling;
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    btn.querySelector('.dep-arrow').textContent = open ? '▼' : '▲';
+  }
+
+  function mudarAbaDepInfo(btn, aba) {
+    btn.closest('.dep-tabs').querySelectorAll('.dep-tab').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('depInfoSF').style.display   = aba === 'sf'   ? 'block' : 'none';
+    document.getElementById('depInfoIRRF').style.display = aba === 'irrf' ? 'block' : 'none';
   }
 
   function selecionarDependentes(valor) {
