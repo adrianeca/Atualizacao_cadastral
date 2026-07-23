@@ -20,6 +20,7 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
 | Aba de usuários admin | `USUARIOS` (`USUARIOS_SHEET_GID = 1120979656`) |
 | Pasta de documentos no Drive (Funcionários) | `1IuU9YLh4kiXg1p-xgNiZruUL9ddnD345` |
 | E-mail do DP | `dp@brasas.com` |
+| Modelo (Google Docs) — Declaração de Dependentes (IRRF) | `1CzYbxg_gA4tBVdQGraLN0Pk1ZEcNyZsiYWvRoud-51I` |
 
 ## Configuração de implantação (Web App)
 
@@ -54,6 +55,19 @@ Google Apps Script (GAS) web app para coleta e registro de atualizações cadast
   - Se Sim:
     - Seletor de **quantidade de dependentes atualmente** (obrigatório)
     - Upload de **múltiplos documentos** (botão "+ Adicionar documento"; Certidão de Nascimento ou RG+CPF, PDF/imagem, máx. 5 MB cada)
+    - Checkbox opcional **"Desejo atualizar minha Declaração de Dependentes para fins de IRRF"** — ver seção [Declaração de Dependentes (IRRF)](#declaração-de-dependentes-irrf) abaixo
+
+## Declaração de Dependentes (IRRF)
+
+Fluxo **opcional**, dentro da seção 2, liberado pelo checkbox "Desejo atualizar minha Declaração de Dependentes para fins de IRRF" quando "Alteração no número de dependentes" = Sim.
+
+1. Ao marcar o checkbox, o formulário revela: campo **RG** (obrigatório, só existe aqui) e uma lista dinâmica de dependentes — limitada a **4** (limite do modelo), mesmo que a quantidade selecionada seja maior (nesse caso aparece um aviso orientando a contatar o DP para os excedentes). Cada dependente tem: Nome completo, Data de nascimento, CPF e Grau de parentesco (select fixo).
+2. Botão **"Gerar Declaração de Dependentes (IRRF)"** chama `gerarDeclaracaoIRRF(dados)` no backend, que:
+   - Copia o modelo `IRRF_TEMPLATE_ID` (Google Docs), abre a cópia com `DocumentApp` e substitui os placeholders (`{{NOME DA EMPRESA}}`, `{{CNPJ}}`, `{{NOME FUNC}}`, `{{CPF FUNC}}`, `{{RG FUNC}}`, `{{CARGO}}`, `{{DATA HOJE}}`, `{{NOME/DATA/CPF/GRAU DEP1..4}}`).
+   - Razão social e CNPJ do empregador vêm de `UNIDADES_EMPRESA_MAP` (chaveado pelo nome completo da unidade, mesmo valor de `UNIDADES_MAP`).
+   - Exporta a cópia como PDF, converte para base64, **apaga a cópia temporária do Drive** e devolve o PDF pro navegador, que dispara o download automaticamente.
+3. A pessoa assina o PDF baixado e reenvia como upload no campo **"Declaração IRRF assinada"** (obrigatório quando o checkbox está marcado), antes de enviar o formulário.
+4. No envio, o arquivo assinado segue o mesmo caminho dos outros documentos (anexo no e-mail + salvo na pasta do colaborador no Drive), com o nome `Declaracao_IRRF_Assinada_NOME.ext`.
 
 ### 3. Escolaridade
 - Último nível de instrução concluído (select)
@@ -94,7 +108,7 @@ Funcionalidades: resumo (total, alterações de dependentes, respostas hoje), ta
 
 ## Colunas da planilha de respostas
 
-`Data/Hora` · `Nome` · `CPF` · `Cargo` · `Endereço` · `Complemento` · `Bairro` · `CEP` · `Cidade` · `Estado` · `Telefone` · `E-mail Pessoal` · `Estado Civil` · `Alteração Dependentes` · `Escolaridade` · `Doc. Dependente` · `Qtd. Dependentes` · `Alteração de Nome` · `Nome Atualizado` · `Doc. Alt. Nome` · `Comprovante Residência` · `Doc. Escolaridade` · `Doc. Estado Civil` · `Número` · `Unidade`
+`Data/Hora` · `Nome` · `CPF` · `Cargo` · `Endereço` · `Complemento` · `Bairro` · `CEP` · `Cidade` · `Estado` · `Telefone` · `E-mail Pessoal` · `Estado Civil` · `Alteração Dependentes` · `Escolaridade` · `Doc. Dependente` · `Qtd. Dependentes` · `Alteração de Nome` · `Nome Atualizado` · `Doc. Alt. Nome` · `Comprovante Residência` · `Doc. Escolaridade` · `Doc. Estado Civil` · `Número` · `Unidade` · `Doc. Declaração IRRF`
 
 As colunas novas são adicionadas automaticamente ao cabeçalho se a aba já existir com o formato anterior.
 
@@ -103,8 +117,11 @@ As colunas novas são adicionadas automaticamente ao cabeçalho se a aba já exi
 - `SpreadsheetApp` — leitura de funcionários e escrita de respostas
 - `GmailApp` — envio de e-mails com anexos
 - `DriveApp` — criação de pastas e arquivos na pasta de documentos
+- `DocumentApp` — geração da Declaração de Dependentes (IRRF) a partir do modelo
 - `HtmlService` — servir o web app
 - `Session` — identificar o e-mail do usuário autenticado (painel admin)
+
+> Como `DocumentApp` é um serviço novo em relação às versões anteriores, a primeira execução após o deploy pode pedir reautorização de escopos no Apps Script.
 
 ## Variáveis globais (Code.gs)
 
@@ -117,6 +134,8 @@ PASTA_DOCUMENTOS_ID     // ID da pasta no Drive "Funcionários"
 UNIDADES_MAP            // Mapa sigla da unidade (coluna V) → nome completo da pasta
 USUARIOS_SPREADSHEET_ID // ID da planilha "CONTROLES BI" (usuários admin)
 USUARIOS_SHEET_GID      // GID da aba USUARIOS dentro da planilha CONTROLES BI
+IRRF_TEMPLATE_ID        // ID do modelo (Google Docs) da Declaração de Dependentes (IRRF)
+UNIDADES_EMPRESA_MAP    // Mapa nome completo da unidade → { nome (razão social), cnpj } do empregador
 ```
 
 ## Funções principais (Code.gs)
@@ -125,6 +144,7 @@ USUARIOS_SHEET_GID      // GID da aba USUARIOS dentro da planilha CONTROLES BI
 |---|---|
 | `doGet()` | Entry point — serve o Index.html |
 | `buscarFuncionarioPorCPF(cpf)` | Busca nome, função e unidade pelo CPF na planilha de funcionários |
+| `gerarDeclaracaoIRRF(dados)` | Gera o PDF da Declaração de Dependentes (IRRF) a partir do modelo e devolve em base64 |
 | `enviarDeclaracao(dados)` | Salva resposta, envia e-mail com anexos, salva no Drive |
 | `salvarResposta(dados, cpf, data)` | Grava linha na aba de respostas (dados de texto em maiúsculo) |
 | `getAdminDataBySession()` | Autentica via Google e retorna dados para o painel admin |

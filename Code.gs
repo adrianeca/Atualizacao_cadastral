@@ -41,6 +41,44 @@ var UNIDADES_MAP = {
   'EDITORA': 'EDITORA'
 };
 
+// ID do modelo (Google Docs) da Declaração de Dependentes para fins de IRRF
+var IRRF_TEMPLATE_ID = '1CzYbxg_gA4tBVdQGraLN0Pk1ZEcNyZsiYWvRoud-51I';
+
+// Nome completo da unidade (mesmo valor de UNIDADES_MAP) → razão social e CNPJ do empregador
+var UNIDADES_EMPRESA_MAP = {
+  'Botafogo':            { nome: 'KANSAS ASS LINGUIST LTDA EPP',                 cnpj: '07.643.896/0001-76' },
+  'Bangu':                { nome: 'BG ASSESSORIA LINGUISTICA LTDA',              cnpj: '55.330.784/0001-08' },
+  'BRASAS ON DEMAND':     { nome: 'BRASAS ON DEMAND ASSESSORIA LINGUISTICA LTDA', cnpj: '65.789.750/0001-30' },
+  'Campo Grande':         { nome: 'CG ASSESSORIA LINGUISTICA LTDA',              cnpj: '23.149.208/0001-72' },
+  'Copacabana':           { nome: 'THE WEST COAST SCHOOL OF ENGLISH LTDA',       cnpj: '30.507.545/0001-50' },
+  'Caxias':               { nome: 'CAXIAS A LINGUISTICA LTDA. EPP',              cnpj: '07.657.195/0001-96' },
+  'Downtown':             { nome: 'DT ASSESSORIA LINGUISTICA LTDA',              cnpj: '10.576.883/0001-36' },
+  'EC NEW':               { nome: 'EC NEW A LINGUISTICA LTDA',                   cnpj: '23.875.012/0001-65' },
+  'EDITORA':              { nome: 'EDITORA EFICIENCIA LTDA',                     cnpj: '42.163.550/0001-71' },
+  'Freguesia':            { nome: 'FG ASSESSORIA LINGUISTICA LTDA',              cnpj: '33.579.506/0001-56' },
+  'Grajaú':               { nome: 'GR ASSESSORIA LINGUISTICA LTDA',              cnpj: '65.768.114/0001-21' },
+  'Ilha do Governador':   { nome: 'CAMBAUBA ASS LINGUISTICA LTDA',               cnpj: '07.644.726/0001-06' },
+  'Ipanema':              { nome: 'NEW CONCEPTS ASSES LING LTDA',                cnpj: '07.826.615/0001-10' },
+  'Itaipu':               { nome: 'IT ASSESSORIA LINGUISTICA LTDA',              cnpj: '07.659.358/0001-70' },
+  'Laranjeiras':          { nome: 'LJ ASSESSORIA LINGUISTICA LTDA',              cnpj: '14.805.058/0001-17' },
+  'ONLINE':               { nome: 'METODOS DE ENSINO BRASAS LTDA',               cnpj: '27.618.651/0001-04' },
+  'Méier':                { nome: 'MRI ASS LINGUISTICA LTDA',                    cnpj: '07.642.399/0001-53' },
+  'Nova Iguaçu':          { nome: 'NI ASSESSORIA LING LTDA EPP',                 cnpj: '07.717.815/0001-35' },
+  'Novo Leblon':          { nome: 'BAL BARRA A LINGUISTICA LTDA',                cnpj: '32.102.956/0001-90' },
+  'Cachambi':             { nome: 'NS ASSESORIA LINGUISTICA',                    cnpj: '17.211.797/0001-79' },
+  'Niterói':              { nome: 'NT ASSESSORIA LINGUISTICA LTDA',              cnpj: '07.659.399/0001-66' },
+  'Pechincha':            { nome: 'FG ASSESSORIA LINGUISTICA LTDA',              cnpj: '33.579.506/0002-37' },
+  'Península':            { nome: 'PN ASSESSORIA LINGUISTICA LTDA',              cnpj: '63.339.978/0001-00' },
+  'Parque Olímpico':      { nome: 'P.O. ASSESSORIA LINGUISTICA LT',              cnpj: '28.535.846/0001-45' },
+  'Recreio':              { nome: 'RC ASSESSORIA LINGUISTICA LTDA',              cnpj: '21.470.581/0001-03' },
+  'Tijuca':               { nome: 'TJ ASSESSORIA LINGUISTICA LTDA',              cnpj: '07.642.417/0001-05' },
+  'Taquara':              { nome: 'TQ ASSESSORIA LINGUISTICA LTDA',              cnpj: '33.579.360/0001-49' },
+  'Vila Olímpia':         { nome: 'BCSP ASSESSORIA LINGUISTI LTDA',              cnpj: '12.127.235/0001-28' },
+  'Vila da Penha':        { nome: 'VP ASSESSORIA LINGUISTICA LTDA',              cnpj: '07.642.688/0001-52' },
+  'Vila Valqueire':       { nome: 'LEXICON ASSESSORIA L LTDA',                   cnpj: '08.432.982/0001-00' },
+  'MÉTODOS':              { nome: 'METODOS DE ENS BRASAS LTDA',                  cnpj: '27.618.651/0001-04' }
+};
+
 // ── Entry point ──────────────────────────────────────────────────────────────
 
 function doGet() {
@@ -85,6 +123,63 @@ function buscarFuncionarioPorCPF(cpf) {
   }
 
   return { ok: false, msg: 'CPF não encontrado. Verifique o número ou entre em contato com o RH.' };
+}
+
+// ── Geração da Declaração de Dependentes (IRRF) ────────────────────────────────
+
+function gerarDeclaracaoIRRF(dados) {
+  try {
+    var empresa = UNIDADES_EMPRESA_MAP[dados.unidade] || { nome: '—', cnpj: '—' };
+
+    var hoje  = new Date();
+    var meses = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                 'agosto','setembro','outubro','novembro','dezembro'];
+    var dataHoje = ', ' + hoje.getDate() + ' de ' + meses[hoje.getMonth()] + ' de ' + hoje.getFullYear() + '.';
+
+    var copia = DriveApp.getFileById(IRRF_TEMPLATE_ID).makeCopy('tmp_irrf_' + hoje.getTime());
+    var doc   = DocumentApp.openById(copia.getId());
+    var body  = doc.getBody();
+
+    body.replaceText('{{NOME DA EMPRESA}}', _upper(empresa.nome));
+    body.replaceText('{{CNPJ}}',            empresa.cnpj);
+    body.replaceText('{{NOME FUNC}}',       _upper(dados.nomeFunc));
+    body.replaceText('{{CPF FUNC}}',        dados.cpfFunc);
+    body.replaceText('{{RG FUNC}}',         dados.rgFunc);
+    body.replaceText('{{CARGO}}',           _upper(dados.cargo));
+    body.replaceText('{{DATA HOJE}}',       dataHoje);
+
+    var qtdDep = (dados.dependentes && dados.dependentes.length) || 0;
+
+    // Remove as linhas da tabela referentes aos dependentes não informados (mantém só header + linhas usadas)
+    var tabela = body.getTables()[0];
+    if (tabela) {
+      for (var r = tabela.getNumRows() - 1; r > qtdDep; r--) {
+        tabela.removeRow(r);
+      }
+    }
+
+    for (var i = 1; i <= qtdDep; i++) {
+      var dep = dados.dependentes[i - 1];
+      body.replaceText('{{NOME DEP' + i + '}}', _upper(dep.nome));
+      body.replaceText('{{DATA DEP' + i + '}}', dep.dataNasc);
+      body.replaceText('{{CPF DEP' + i + '}}',  dep.cpf);
+      body.replaceText('{{GRAU DEP' + i + '}}', dep.grau);
+    }
+
+    doc.saveAndClose();
+
+    var pdfBlob = DriveApp.getFileById(copia.getId()).getAs('application/pdf');
+    var base64  = Utilities.base64Encode(pdfBlob.getBytes());
+    copia.setTrashed(true);
+
+    return {
+      ok: true,
+      base64: base64,
+      filename: 'Declaracao_Dependentes_IRRF_' + String(dados.nomeFunc || '').replace(/\s+/g, '_') + '.pdf'
+    };
+  } catch (e) {
+    return { ok: false, msg: e.message };
+  }
 }
 
 // ── Envio da declaração ───────────────────────────────────────────────────────
@@ -149,6 +244,16 @@ function enviarDeclaracao(dados) {
     } catch(e) { Logger.log('Erro blob docEstadoCivil: ' + e); }
   }
 
+  if (dados.docIrrfAssinado) {
+    try {
+      attachments.push(Utilities.newBlob(
+        Utilities.base64Decode(dados.docIrrfAssinado.data),
+        dados.docIrrfAssinado.type || 'application/octet-stream',
+        'Declaracao_IRRF_Assinada_' + nomeBase + _ext(dados.docIrrfAssinado.name)
+      ));
+    } catch(e) { Logger.log('Erro blob docIrrfAssinado: ' + e); }
+  }
+
   if (dados.docsEscolaridade && dados.docsEscolaridade.length > 0) {
     dados.docsEscolaridade.forEach(function(doc, idx) {
       try {
@@ -179,7 +284,7 @@ function salvarResposta(dados, cpfFormatado, data) {
   var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName(NOME_ABA);
 
-  var NOVOS_HEADERS = ['Doc. Dependente', 'Qtd. Dependentes', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência', 'Doc. Escolaridade', 'Doc. Estado Civil', 'Número', 'Unidade'];
+  var NOVOS_HEADERS = ['Doc. Dependente', 'Qtd. Dependentes', 'Alteração de Nome', 'Nome Atualizado', 'Doc. Alt. Nome', 'Comprovante Residência', 'Doc. Escolaridade', 'Doc. Estado Civil', 'Número', 'Unidade', 'Doc. Declaração IRRF'];
 
   if (!sheet) {
     sheet = ss.insertSheet(NOME_ABA);
@@ -218,7 +323,8 @@ function salvarResposta(dados, cpfFormatado, data) {
     (dados.docsEscolaridade && dados.docsEscolaridade.length > 0) ? 'Sim (' + dados.docsEscolaridade.length + ')' : 'Não',
     dados.docEstadoCivil  ? 'Sim' : 'Não',
     _upper(dados.numero),
-    _upper(dados.unidade)
+    _upper(dados.unidade),
+    dados.docIrrfAssinado ? 'Sim' : 'Não'
   ]);
 }
 
@@ -266,6 +372,9 @@ function criarEmailTexto(dados, cpfFormatado, dataFormatada) {
     linhas.push('Quantidade de dependentes atualmente: ' + (dados.qtdDependentes || '—'));
     var numDocsDep = (dados.docsDependente && dados.docsDependente.length) || 0;
     linhas.push('Documentos do dependente: ' + (numDocsDep > 0 ? numDocsDep + ' arquivo(s) enviado(s) em anexo' : 'nenhum enviado'));
+    if (dados.irrfDesejado === 'Sim') {
+      linhas.push('Declaração de Dependentes (IRRF): enviada em anexo');
+    }
   }
 
   var numDocsEsc = (dados.docsEscolaridade && dados.docsEscolaridade.length) || 0;
@@ -440,6 +549,11 @@ function criarEmailHtml(dados, cpfFormatado, dataFormatada) {
         : '<p style="font-size:12px;color:#9a6700;background:#fff6df;border:1px solid #f0c060;border-radius:8px;padding:10px 14px;margin-top:8px;">' +
             '⚠️ Nenhum documento do dependente foi anexado.' +
           '</p>');
+    if (dados.irrfDesejado === 'Sim') {
+      docDepStatus += '<p style="font-size:12px;color:#1f7a4d;background:#eaf7f0;border:1px solid #6fcf97;border-radius:8px;padding:10px 14px;margin-top:8px;">' +
+        '📎 Declaração de Dependentes (IRRF) enviada em anexo.' +
+      '</p>';
+    }
   }
 
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f6fd;font-family:Arial,sans-serif;">' +

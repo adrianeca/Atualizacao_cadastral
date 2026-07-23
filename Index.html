@@ -94,6 +94,7 @@
 
     input[type="text"],
     input[type="email"],
+    input[type="date"],
     select {
       width: 100%;
       border: 2px solid #d6def7;
@@ -608,7 +609,7 @@
                 <li>Termo de guarda judicial (tutelados/curatelados)</li>
               </ul>
               <div class="dep-irrf-note">
-                📋 Para incluir dependentes no IRRF, solicite o <strong>formulário de Declaração de Dependentes</strong> diretamente ao DP em <strong>dp@brasas.com</strong> e envie preenchido com os documentos acima.
+                📋 Para incluir dependentes no IRRF, marque a opção <strong>"Desejo atualizar minha Declaração de Dependentes para fins de IRRF"</strong> logo abaixo — o documento é gerado automaticamente pra você assinar e reenviar aqui mesmo.
               </div>
             </div>
           </div>
@@ -626,7 +627,7 @@
         <div id="secaoDocDependente" style="display:none;margin-top:14px;">
           <div class="field">
             <label for="fQtdDependentes">Quantidade de dependentes atualmente <span class="required">*</span></label>
-            <select id="fQtdDependentes" style="max-width:200px;">
+            <select id="fQtdDependentes" style="max-width:200px;" onchange="if(document.getElementById('chkIrrf').checked) renderDependentesIrrf();">
               <option value="">— Selecione —</option>
               <option>1</option><option>2</option><option>3</option><option>4</option>
               <option>5</option><option>6</option><option>7</option><option>8</option>
@@ -638,6 +639,36 @@
             <div id="containerDocsDependente"></div>
             <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="adicionarDocDep()">+ Adicionar documento</button>
             <div class="help" style="margin-top:8px;">Envie os documentos conforme o tipo de dependente (ver "Saiba quem deve ser informado como dependente" acima). PDF ou imagem, máx. 5 MB cada.</div>
+          </div>
+
+          <div class="field" style="margin-top:18px;border-top:1.5px solid #e8eef8;padding-top:16px;">
+            <label class="radio-item" style="max-width:100%;gap:12px;cursor:pointer;">
+              <input type="checkbox" id="chkIrrf" onchange="toggleSecaoIrrf()" style="width:18px;height:18px;min-width:18px;accent-color:var(--royal-blue);cursor:pointer;">
+              <span style="font-size:14px;">Desejo atualizar minha Declaração de Dependentes para fins de Imposto de Renda (IRRF).</span>
+            </label>
+          </div>
+
+          <div id="secaoIrrf" style="display:none;margin-top:14px;">
+            <div class="field" style="max-width:280px;">
+              <label for="fRG">RG <span class="required">*</span></label>
+              <input type="text" id="fRG" placeholder="00.000.000-0">
+            </div>
+
+            <div id="containerDependentesIrrf"></div>
+
+            <div class="warning-box" id="irrfLimiteAviso" style="display:none;">
+              O modelo de declaração suporta até 4 dependentes. Para incluir mais, entre em contato com o DP em dp@brasas.com.
+            </div>
+
+            <div class="actions" style="margin-top:12px;">
+              <button type="button" class="btn-secondary" onclick="gerarDocumentoIRRF()">📄 Gerar Declaração de Dependentes (IRRF)</button>
+            </div>
+
+            <div class="field" style="margin-top:16px;">
+              <label for="fDocIrrfAssinado">Declaração IRRF assinada <span class="required">*</span></label>
+              <input type="file" id="fDocIrrfAssinado" accept=".pdf,.jpg,.jpeg,.png">
+              <div class="help">Baixe o documento gerado acima, assine e envie o arquivo assinado aqui (PDF ou imagem, máx. 5 MB).</div>
+            </div>
           </div>
         </div>
       </div>
@@ -939,6 +970,117 @@
     container.appendChild(div);
   }
 
+  /* ══ Declaração de Dependentes (IRRF) ═══════════════════════════════════════ */
+
+  function toggleSecaoIrrf() {
+    var checked = document.getElementById('chkIrrf').checked;
+    document.getElementById('secaoIrrf').style.display = checked ? 'block' : 'none';
+    if (checked) renderDependentesIrrf();
+  }
+
+  function renderDependentesIrrf() {
+    var qtdRaw = document.getElementById('fQtdDependentes').value;
+    var qtdNum = qtdRaw === '10 ou mais' ? 5 : (parseInt(qtdRaw, 10) || 0);
+    var qtd    = Math.min(qtdNum, 4);
+
+    document.getElementById('irrfLimiteAviso').style.display = qtdNum > 4 ? 'block' : 'none';
+
+    var container = document.getElementById('containerDependentesIrrf');
+    container.innerHTML = '';
+
+    var grausOptions = ['Filho(a) / Enteado(a)', 'Cônjuge / Companheiro(a)', 'Pai / Mãe', 'Avô / Avó', 'Outro'];
+
+    for (var i = 1; i <= qtd; i++) {
+      var bloco = document.createElement('div');
+      bloco.style.cssText = 'border:1.5px solid #d6def7;border-radius:10px;padding:14px 16px;margin-bottom:12px;';
+
+      var titulo = document.createElement('div');
+      titulo.style.cssText = 'font-size:13px;font-weight:bold;color:var(--royal-blue-dark);margin-bottom:10px;';
+      titulo.textContent = 'Dependente ' + i;
+      bloco.appendChild(titulo);
+
+      var grid1 = document.createElement('div');
+      grid1.className = 'grid-2';
+      grid1.innerHTML =
+        '<div class="field"><label>Nome Completo <span class="required">*</span></label>' +
+        '<input type="text" id="depIrrfNome_' + i + '" placeholder="Nome completo do dependente"></div>' +
+        '<div class="field"><label>Data de Nascimento <span class="required">*</span></label>' +
+        '<input type="date" id="depIrrfData_' + i + '"></div>';
+      bloco.appendChild(grid1);
+
+      var grid2 = document.createElement('div');
+      grid2.className = 'grid-2';
+      var selectHtml = '<select id="depIrrfGrau_' + i + '"><option value="">— Selecione —</option>' +
+        grausOptions.map(function(g) { return '<option>' + g + '</option>'; }).join('') + '</select>';
+      grid2.innerHTML =
+        '<div class="field"><label>CPF <span class="required">*</span></label>' +
+        '<input type="text" id="depIrrfCpf_' + i + '" placeholder="000.000.000-00" maxlength="14" oninput="formatarCPF(this)"></div>' +
+        '<div class="field"><label>Grau de Parentesco <span class="required">*</span></label>' + selectHtml + '</div>';
+      bloco.appendChild(grid2);
+
+      container.appendChild(bloco);
+    }
+  }
+
+  function formatarDataBR(valorInputDate) {
+    if (!valorInputDate) return '';
+    var partes = valorInputDate.split('-');
+    return partes[2] + '/' + partes[1] + '/' + partes[0];
+  }
+
+  function gerarDocumentoIRRF() {
+    var rg = document.getElementById('fRG').value.trim();
+    if (!rg) { showToast('Informe o RG.', 'error'); return; }
+
+    var qtdRaw = document.getElementById('fQtdDependentes').value;
+    var qtdNum = qtdRaw === '10 ou mais' ? 5 : (parseInt(qtdRaw, 10) || 0);
+    var qtd    = Math.min(qtdNum, 4);
+
+    if (qtd === 0) { showToast('Informe a quantidade de dependentes.', 'error'); return; }
+
+    var dependentes = [];
+    for (var i = 1; i <= qtd; i++) {
+      var nome = document.getElementById('depIrrfNome_' + i).value.trim();
+      var data = document.getElementById('depIrrfData_' + i).value;
+      var cpf  = document.getElementById('depIrrfCpf_' + i).value.trim();
+      var grau = document.getElementById('depIrrfGrau_' + i).value;
+      if (!nome || !data || !cpf || !grau) {
+        showToast('Preencha todos os dados do dependente ' + i + '.', 'error');
+        return;
+      }
+      dependentes.push({ nome: nome, dataNasc: formatarDataBR(data), cpf: cpf, grau: grau });
+    }
+
+    mostrarLoading('Gerando documento...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        ocultarLoading();
+        if (!res.ok) { showToast('Erro ao gerar documento: ' + (res.msg || 'tente novamente.'), 'error'); return; }
+        var byteChars   = atob(res.base64);
+        var byteNumbers = new Array(byteChars.length);
+        for (var j = 0; j < byteChars.length; j++) byteNumbers[j] = byteChars.charCodeAt(j);
+        var blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+        var url  = URL.createObjectURL(blob);
+        var a    = document.createElement('a');
+        a.href     = url;
+        a.download = res.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Documento gerado. Assine e envie o arquivo assinado abaixo.', 'success');
+      })
+      .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+      .gerarDeclaracaoIRRF({
+        nomeFunc: dadosFuncionario.nome,
+        cpfFunc:  dadosFuncionario.cpf,
+        rgFunc:   rg,
+        cargo:    dadosFuncionario.funcao,
+        unidade:  dadosFuncionario.unidade,
+        dependentes: dependentes
+      });
+  }
+
   function onEscolaridadeChange() {
     var val = document.getElementById('fEscolaridade').value;
     var mostrar = val && val !== 'Ensino Fundamental Incompleto';
@@ -1051,6 +1193,22 @@
     if (dependentesSelecionado === 'Sim' && !document.getElementById('fQtdDependentes').value) {
       showToast('Informe a quantidade atual de dependentes.', 'error'); return;
     }
+    var irrfDesejado = document.getElementById('chkIrrf').checked ? 'Sim' : 'Não';
+    if (irrfDesejado === 'Sim') {
+      if (!document.getElementById('fRG').value.trim()) { showToast('Informe o RG para a declaração de IRRF.', 'error'); return; }
+      var qtdRawIrrf = document.getElementById('fQtdDependentes').value;
+      var qtdIrrf = Math.min(qtdRawIrrf === '10 ou mais' ? 5 : (parseInt(qtdRawIrrf, 10) || 0), 4);
+      for (var di = 1; di <= qtdIrrf; di++) {
+        var okDep = document.getElementById('depIrrfNome_' + di).value.trim() &&
+                    document.getElementById('depIrrfData_' + di).value &&
+                    document.getElementById('depIrrfCpf_' + di).value.trim() &&
+                    document.getElementById('depIrrfGrau_' + di).value;
+        if (!okDep) { showToast('Preencha todos os dados do dependente ' + di + ' para a declaração de IRRF.', 'error'); return; }
+      }
+      if (!document.getElementById('fDocIrrfAssinado').files[0]) {
+        showToast('Anexe a declaração de IRRF assinada.', 'error'); return;
+      }
+    }
     if (!escolaridade) { showToast('Selecione o nível de escolaridade.', 'error'); return; }
     if (escolaridade !== 'Ensino Fundamental Incompleto') {
       var temDocEsc = false;
@@ -1067,6 +1225,7 @@
     var fileCompRes    = document.getElementById('fComprovanteRes').files[0] || null;
     var fileDocEstadoCivil = (estadoCivilSelecionado && estadoCivilSelecionado !== 'Solteiro(a)')
                          ? (document.getElementById('fDocEstadoCivil').files[0] || null) : null;
+    var fileDocIrrfAssinado = irrfDesejado === 'Sim' ? (document.getElementById('fDocIrrfAssinado').files[0] || null) : null;
 
     var filesDocsEscolaridade = [];
     if (escolaridade && escolaridade !== 'Ensino Fundamental Incompleto') {
@@ -1090,36 +1249,41 @@
         if (docEstadoCivil === false) { ocultarLoading(); return; }
         lerArquivo(fileCompRes, function(comprovanteRes) {
           if (comprovanteRes === false) { ocultarLoading(); return; }
-          lerArquivos(filesDocsEscolaridade, function(docsEscolaridade) {
-            if (docsEscolaridade === false) { ocultarLoading(); return; }
-            lerArquivos(filesDocsDep, function(docsDependente) {
-              if (docsDependente === false) { ocultarLoading(); return; }
-              mostrarLoading('Enviando declaração...');
-              google.script.run
-                .withSuccessHandler(function(res) {
-                  ocultarLoading();
-                  if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
-                  document.getElementById('passo2').style.display = 'none';
-                  document.getElementById('passo3').style.display = 'block';
-                  window.scrollTo(0, 0);
-                })
-                .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
-                .enviarDeclaracao({
-                  cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
-                  unidade: dadosFuncionario.unidade,
-                  endereco: endereco, numero: numero, complemento: complemento, bairro: bairro, cep: cep,
-                  cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
-                  estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
-                  qtdDependentes: qtdDependentes,
-                  escolaridade: escolaridade,
-                  alteracaoNome: alteracaoNomeSelecionado,
-                  nomeAtualizado: nomeAtualizado,
-                  docNome: docNome,
-                  docEstadoCivil: docEstadoCivil,
-                  comprovanteRes: comprovanteRes,
-                  docsEscolaridade: docsEscolaridade,
-                  docsDependente: docsDependente
-                });
+          lerArquivo(fileDocIrrfAssinado, function(docIrrfAssinado) {
+            if (docIrrfAssinado === false) { ocultarLoading(); return; }
+            lerArquivos(filesDocsEscolaridade, function(docsEscolaridade) {
+              if (docsEscolaridade === false) { ocultarLoading(); return; }
+              lerArquivos(filesDocsDep, function(docsDependente) {
+                if (docsDependente === false) { ocultarLoading(); return; }
+                mostrarLoading('Enviando declaração...');
+                google.script.run
+                  .withSuccessHandler(function(res) {
+                    ocultarLoading();
+                    if (!res.ok) { showToast('Erro ao enviar: ' + (res.msg || 'tente novamente.'), 'error'); return; }
+                    document.getElementById('passo2').style.display = 'none';
+                    document.getElementById('passo3').style.display = 'block';
+                    window.scrollTo(0, 0);
+                  })
+                  .withFailureHandler(function(err) { ocultarLoading(); showToast('Erro: ' + err.message, 'error'); })
+                  .enviarDeclaracao({
+                    cpf: dadosFuncionario.cpf, nome: dadosFuncionario.nome, funcao: dadosFuncionario.funcao,
+                    unidade: dadosFuncionario.unidade,
+                    endereco: endereco, numero: numero, complemento: complemento, bairro: bairro, cep: cep,
+                    cidade: cidade, estado: estado, telefone: telefone, emailPessoal: emailPessoal,
+                    estadoCivil: estadoCivilSelecionado, alteracaoDependentes: dependentesSelecionado,
+                    qtdDependentes: qtdDependentes,
+                    escolaridade: escolaridade,
+                    alteracaoNome: alteracaoNomeSelecionado,
+                    nomeAtualizado: nomeAtualizado,
+                    docNome: docNome,
+                    docEstadoCivil: docEstadoCivil,
+                    comprovanteRes: comprovanteRes,
+                    docsEscolaridade: docsEscolaridade,
+                    docsDependente: docsDependente,
+                    irrfDesejado: irrfDesejado,
+                    docIrrfAssinado: docIrrfAssinado
+                  });
+              });
             });
           });
         });
